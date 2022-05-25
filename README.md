@@ -22,5 +22,5 @@ git clone https://github.com/HeadmasterTan/zhi-plugin.git ./plugins/zhi-plugin/
 进行安装。如需更新，在BOT文件夹根目录打开终端，运行
 
 ```
-git -C ./plugins/miao-plugin/ pull
+git -C ./plugins/zhi-plugin/ pull
 ```
