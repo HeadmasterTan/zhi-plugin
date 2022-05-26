@@ -215,6 +215,9 @@ export async function delRandomApply(e) {
   let tempArr = textArr.get(msg);
   if (tempArr) {
     if (index > -1) {
+      if (index > tempArr.length) {
+        return;
+      }
       let delMsg = tempArr.splice(index - 1, 1)[0];
       textArr.set(msg, tempArr);
 
