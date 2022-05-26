@@ -1,5 +1,7 @@
 import { getRandomApply, randomApply, addRandomApplyContext, delRandomApply } from "./apps/randomApply.js";
-export { getRandomApply, randomApply, addRandomApplyContext, delRandomApply };
+import { updateZhiPlugin } from "./apps/update.js"
+
+export { getRandomApply, randomApply, addRandomApplyContext, delRandomApply, updateZhiPlugin };
 
 let rule = {
   getRandomApply: {
@@ -22,6 +24,11 @@ let rule = {
     reg: "^#*删除(.*)$",
     priority: 5003,
     describe: "【删除哈哈】删除添加的内容",
+  },
+  updateZhiPlugin: {
+    reg: "^#更新白纸插件$",
+    priority: 4999,
+    describe: "更新白纸插件",
   },
 };
 
