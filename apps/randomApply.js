@@ -19,10 +19,12 @@ export async function getRandomApply(e) {
   if (!e.message) {
     return;
   }
-  if (context[e.user_id]) { // 当前正在添加随机回复
+  if (context[e.user_id]) {
+    // 当前正在添加随机回复
     return;
   }
-  if (textArr.size <= 0) { // 随机回复列表中没有数据
+  if (textArr.size <= 0) {
+    // 随机回复列表中没有数据
     return false;
   }
 
@@ -33,7 +35,7 @@ export async function getRandomApply(e) {
   let text = textArr.get(key); // 获取关键词对应的回复列表
   if (textArr && text) {
     let sendMsg = [];
-    text = text[Math.floor(Math.random() * text.length)] // 随机回复其中的一条
+    text = text[Math.floor(Math.random() * text.length)]; // 随机回复其中的一条
 
     for (let val of text) {
       // 避免风控。。
@@ -63,13 +65,6 @@ export async function randomApply(e) {
 
   let name = lodash.truncate(e.sender.card, { length: 8 });
 
-  // 只输入了命令，没有添加关键字
-  let msg = e.msg.trim();
-  if (msg === "添加" || msg === "#添加") {
-    e.reply([segment.at(e.user_id, name), `\n添加随机回复请发送 如：`, "\n#添加 哈哈"]);
-    return;
-  }
-
   let Msg = [];
   let head;
   for (let val of e.message) {
@@ -95,8 +90,8 @@ export async function randomApply(e) {
 
   // 关键词后携带图片的，直接添加图片
   if (Msg.length == 2 && Msg[1].type == "image" && Msg[0].text) {
-    let msgList = textArr.get(Msg[0].text.trim()) || []
-    msgList.push([Msg[1]])
+    let msgList = textArr.get(Msg[0].text.trim()) || [];
+    msgList.push([Msg[1]]);
 
     textArr.set(Msg[0].text.trim(), msgList);
     let name = lodash.truncate(e.sender.card, { length: 8 });
@@ -107,7 +102,7 @@ export async function randomApply(e) {
     for (let [k, v] of textArr) {
       obj[k] = v;
     }
-  
+
     fs.writeFileSync(JSON_PATH, JSON.stringify(obj, "", "\t"));
     return true;
   }
@@ -155,14 +150,21 @@ export async function addRandomApplyContext(e) {
     }
   }
 
-  
-  let msgList = textArr.get(context[e.user_id].text.trim()) || []
-  msgList.push(e.message)
+  let msgList = textArr.get(context[e.user_id].text.trim()) || [];
+  let isExist = false
+  msgList.forEach(function(item) {
+    if (JSON.stringify(item) === JSON.stringify(e.message)) {
+      isExist = true
+    }
+  })
+  if (!isExist) {
+    msgList.push(e.message);
+  }
 
   textArr.set(context[e.user_id].text.trim(), msgList);
   e.reply([segment.at(e.user_id, name), "\n添加成功：", ...context[e.user_id].msg]);
   Bot.logger.mark(`[${e.sender.nickname}(${e.user_id})] 添加成功:${context[e.user_id].text}`);
-  
+
   clearTimeout(contextTimer[e.user_id]);
   delete context[e.user_id];
   delete contextTimer[e.user_id];
@@ -174,7 +176,7 @@ export async function addRandomApplyContext(e) {
 
   fs.writeFileSync(JSON_PATH, JSON.stringify(obj, "", "\t"));
 
-  return true
+  return true;
 }
 
 // 删除表情
@@ -191,14 +193,14 @@ export async function delRandomApply(e) {
     return false;
   }
 
-  if (e.groupConfig.imgAddLimit==2) {
+  if (e.groupConfig.imgAddLimit == 2) {
     if (!e.isMaster) {
       e.reply(`只有主人才能删除`);
       return true;
     }
   }
 
-  if (e.groupConfig.imgAddLimit==1 && !e.isMaster) {
+  if (e.groupConfig.imgAddLimit == 1 && !e.isMaster) {
     if (e.isGroup && !e.member.is_admin) {
       e.reply(`只有管理员才能删除`);
       return true;
@@ -206,10 +208,11 @@ export async function delRandomApply(e) {
   }
 
   let index = getIndex(msg);
+  // 指定序号删除
   if (index > -1) {
-    msg = msg.split(' ');
+    msg = msg.split(" ");
     msg.pop();
-    msg = msg.join(' ').trimEnd();
+    msg = msg.join(" ").trimEnd(); // 保不准这个表情中间真的有空格
   }
 
   let tempArr = textArr.get(msg);
@@ -219,9 +222,14 @@ export async function delRandomApply(e) {
         return;
       }
       let delMsg = tempArr.splice(index - 1, 1)[0];
-      textArr.set(msg, tempArr);
 
-      let sendMsg = []
+      if (tempArr.length === 0) {
+        textArr.delete(msg);
+      } else {
+        textArr.set(msg, tempArr);
+      }
+
+      let sendMsg = [];
       for (let val of delMsg) {
         // 避免风控。。
         if (val.type == "image") {
