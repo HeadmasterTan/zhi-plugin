@@ -9,8 +9,10 @@ if (!fs.existsSync(`${_path}/data/randomApply/`)) {
 }
 
 const JSON_PATH = `${_path}/data/randomApply/randomApply.json`;
+const BAKE_JSON_PATH = `${_path}/data/randomApply/randomApply_bake.json`;
 let context = {}; // 随机回复上下文
 let textArr = {};
+let bakeTextArr = {};
 let contextTimer = {};
 getTextData();
 
@@ -246,6 +248,7 @@ export async function delRandomApply(e) {
       e.reply(["删除指定表情成功：\n", ...sendMsg]);
     } else {
       textArr.delete(msg);
+      bakeRandomApply(msg, tempArr);
       e.reply("删除成功：" + msg);
     }
 
@@ -261,6 +264,22 @@ export async function delRandomApply(e) {
   Bot.logger.mark(`[${e.sender.nickname}(${e.user_id})] 删除成功:${msg}`);
 
   return true;
+}
+
+// 从备份中恢复
+export async function revertRandomApply(e) {
+  return true;
+}
+
+// 备份表情，只会在完整删除的时候备份，序号删除的时候不会备份
+function bakeRandomApply(msg, arr) {
+  bakeTextArr.set(msg, arr)
+  
+  let obj = {};
+  for (let [k, v] of bakeTextArr) {
+    obj[k] = v;
+  }
+  fs.writeFileSync(BAKE_JSON_PATH, JSON.stringify(obj, "", "\t"));
 }
 
 // 获取index，  index：是否删除指定index的表情
@@ -280,12 +299,20 @@ function getIndex(msg) {
 // 获取随机回复列表
 function getTextData() {
   textArr = new Map();
+  bakeTextArr = new Map();
 
   if (!fs.existsSync(JSON_PATH)) {
     fs.writeFileSync(JSON_PATH, JSON.stringify({}, "", "\t"));
     return;
   }
 
+  if (!fs.existsSync(BAKE_JSON_PATH)) {
+    fs.writeFileSync(BAKE_JSON_PATH, JSON.stringify({}, "", "\t"));
+    return;
+  }
+
   let textJson = JSON.parse(fs.readFileSync(JSON_PATH, "utf8"));
+  let bakeTextJson = JSON.parse(fs.readFileSync(BAKE_JSON_PATH, "utf8"));
   textArr = new Map(Object.entries(textJson));
+  bakeTextArr = new Map(Object.entries(bakeTextJson));
 }

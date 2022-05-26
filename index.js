@@ -1,7 +1,7 @@
-import { getRandomApply, randomApply, addRandomApplyContext, delRandomApply } from "./apps/randomApply.js";
+import { getRandomApply, randomApply, addRandomApplyContext, delRandomApply, revertRandomApply } from "./apps/randomApply.js";
 import { updateZhiPlugin } from "./apps/update.js";
 
-export { getRandomApply, randomApply, addRandomApplyContext, delRandomApply, updateZhiPlugin };
+export { getRandomApply, randomApply, addRandomApplyContext, delRandomApply, revertRandomApply, updateZhiPlugin };
 
 let rule = {
   // updateZhiPlugin: {
@@ -20,6 +20,11 @@ let rule = {
     priority: 5001,
     describe: "【添加哈哈】添加内容",
   },
+  // revertRandomApply: {
+  //   reg: "^#恢复表情(.*)",
+  //   priority: 5001,
+  //   describe: "【添加哈哈】添加内容",
+  // },
   addRandomApplyContext: {
     reg: "noCheck",
     priority: 5002,
