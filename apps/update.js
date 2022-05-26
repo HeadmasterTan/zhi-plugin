@@ -21,10 +21,11 @@ export async function updateZhiPlugin(e) {
     }
 
     if (error) {
-      e.reply("更新失败！\nError code: " + error.code + "\n" + error.stack + "\n 请稍后重试。");
+      e.reply("更新失败！请稍后重试。");
     } else {
       e.reply("更新成功~记得重启哦~");
     }
+    return true;
   });
 
   return true; // 返回true 阻挡消息不再往下
