@@ -75,7 +75,7 @@ export async function randomApply(e) {
   for (let val of e.message) {
     if (val.type == "text" && /^[#|\s|\r]*添加(.*)/g.test(val.text)) {
       val.isAdd = true;
-      val.text = val.text.replace(/#|添加/g, "");
+      val.text = val.text.replace(/#|＃|图片|表情|添加|删除|列表/g, "");
       head = val;
     } else {
       if (val.type == "at") {
@@ -119,7 +119,7 @@ export async function randomApply(e) {
     text: e
       .toString()
       .replace(re, "")
-      .replace(/#|添加/g, "")
+      .replace(/#|＃|图片|表情|添加|删除|列表/g, "")
       .trim(),
     msg: Msg,
   };
@@ -175,6 +175,95 @@ export async function addRandomApplyContext(e) {
   fs.writeFileSync(JSON_PATH, JSON.stringify(obj, "", "\t"));
 
   return true
+}
+
+// 删除表情
+export async function delRandomApply(e) {
+  var re = new RegExp("{at:" + BotConfig.account.qq + "}", "g");
+
+  let msg = e
+    .toString()
+    .replace(re, "")
+    .replace(/#|＃|图片|表情|添加|删除|列表/g, "")
+    .trim();
+
+  if (!msg) {
+    return false;
+  }
+
+  if (e.groupConfig.imgAddLimit==2) {
+    if (!e.isMaster) {
+      e.reply(`只有主人才能删除`);
+      return true;
+    }
+  }
+
+  if (e.groupConfig.imgAddLimit==1 && !e.isMaster) {
+    if (e.isGroup && !e.member.is_admin) {
+      e.reply(`只有管理员才能删除`);
+      return true;
+    }
+  }
+
+  let index = getIndex(msg);
+  if (index > -1) {
+    msg = msg.split(' ');
+    msg.pop();
+    msg = msg.join(' ').trimEnd();
+  }
+
+  let tempArr = textArr.get(msg);
+  if (tempArr) {
+    if (index > -1) {
+      let delMsg = tempArr.splice(index - 1, 1)[0];
+      textArr.set(msg, tempArr);
+
+      let sendMsg = []
+      for (let val of delMsg) {
+        // 避免风控。。
+        if (val.type == "image") {
+          let tmp = segment.image(val.url);
+          tmp.asface = val.asface;
+          sendMsg.push(tmp);
+        } else if (val.type == "at") {
+          let tmp = segment.at(val.qq);
+          sendMsg.push(tmp);
+        } else {
+          sendMsg.push(val);
+        }
+      }
+      e.reply(["删除指定表情成功：\n", ...sendMsg]);
+    } else {
+      textArr.delete(msg);
+      e.reply("删除成功：" + msg);
+    }
+
+    let obj = {};
+    for (let [k, v] of textArr) {
+      obj[k] = v;
+    }
+    fs.writeFileSync(JSON_PATH, JSON.stringify(obj, "", "\t"));
+  } else {
+    return;
+  }
+
+  Bot.logger.mark(`[${e.sender.nickname}(${e.user_id})] 删除成功:${msg}`);
+
+  return true;
+}
+
+// 获取index，  index：是否删除指定index的表情
+function getIndex(msg) {
+  let arr = msg.split(" ");
+  if (arr.length === 1) {
+    return -1;
+  }
+  let index = Number(arr.pop());
+  if (isNaN(index) || index < 1) {
+    return -1;
+  }
+
+  return index;
 }
 
 // 获取随机回复列表
