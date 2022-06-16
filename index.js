@@ -1,9 +1,43 @@
 import { getRandomApply, randomApply, addRandomApplyContext, delRandomApply, revertRandomApply } from "./apps/randomApply.js";
+import { changeBilibiliPush, updateBilibiliPush, getBilibiliPushUserList, pushScheduleJob } from "./apps/bilibiliPush.js";
 import { updateZhiPlugin } from "./apps/update.js";
 
-export { getRandomApply, randomApply, addRandomApplyContext, delRandomApply, revertRandomApply, updateZhiPlugin };
+import schedule from "node-schedule";
+
+export {
+  getRandomApply,
+  randomApply,
+  addRandomApplyContext,
+  delRandomApply,
+  revertRandomApply,
+  changeBilibiliPush,
+  updateBilibiliPush,
+  getBilibiliPushUserList,
+  pushScheduleJob,
+  updateZhiPlugin,
+};
 
 let rule = {
+  changeBilibiliPush: {
+    reg: "^#*(开启|关闭)B站推送$",
+    priority: 5,
+    describe: "开启或关闭B站推送，默认推送原神动态",
+  },
+  updateBilibiliPush: {
+    reg: "^#*(添加|增加|新增|删除|移除|去除)B站推送\\s*.*$",
+    priority: 5,
+    describe: "添加或删除B站推送UID"
+  },
+  getBilibiliPushUserList: {
+    reg: "^#*B站推送列表$",
+    priority: 5,
+    describe: "返回当前聊天对象推送的B站用户列表"
+  },
+  pushScheduleJob: {
+    reg: "^#*测试B站推送$",
+    priority: 5,
+    describe: "测试B站推送"
+  },
   // updateZhiPlugin: {
   //   reg: "^#更新白纸插件$",
   //   priority: 4999,
@@ -36,6 +70,15 @@ let rule = {
     describe: "【删除哈哈】删除添加的内容",
   },
 };
+
+// 定时任务
+async function task() {
+  // B站动态推送
+  // Cron表达式，具体百度。每到[5,15,25,35,45,55]分钟执行一次
+  schedule.scheduleJob("0 5,15,25,35,45,55 * * * ?", () => YunzaiApps['plugin_zhi-plugin'].pushScheduleJob());
+}
+
+task();
 
 console.log("白纸插件初始化完成~");
 

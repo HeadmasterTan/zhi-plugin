@@ -163,6 +163,8 @@ export async function addRandomApplyContext(e) {
     msgList.push(e.message);
   }
 
+  console.log('================= oicq e\n', e, '\n================= oicq e');
+
   textArr.set(context[e.user_id].text.trim(), msgList);
   e.reply([segment.at(e.user_id, name), "\n添加成功：", ...context[e.user_id].msg]);
   Bot.logger.mark(`[${e.sender.nickname}(${e.user_id})] 添加成功:${context[e.user_id].text}`);
