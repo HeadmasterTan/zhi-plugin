@@ -10,11 +10,11 @@ export async function updateZhiPlugin(e = {}) {
   }
   
   let command = "git  pull";
-  e.reply("正在执行更新操作，请稍等");
+  e.reply("马上给你更新，稍等一下");
   
   exec(command, { cwd: `${_path}/plugins/zhi-plugin/` }, function (error, stdout, stderr) {
     if (/Already up[ -]to[ -]date/.test(stdout)) {
-      e.reply("目前已经是最新版哦~");
+      e.reply("啊这，没有可以更新的内容呢");
       return true;
     }
     if (error) {

@@ -4,16 +4,14 @@
 
 ## 安装与更新
 
-推荐使用git进行安装，以方便后续升级。在BOT根目录夹打开终端，运行
+推荐使用git进行安装，以方便后续升级。在BOT根目录夹打开终端，运行如下命令进行安装。
 
 ```
 git clone https://github.com/HeadmasterTan/zhi-plugin.git ./plugins/zhi-plugin/
 ```
 
-进行安装。如需更新，在BOT文件夹根目录打开终端，运行
+如需更新，在BOT文件夹根目录打开终端，运行如下指令。或者给机器人发送`#更新白纸插件`（失败了就多试几次）
 
 ```
 git -C ./plugins/zhi-plugin/ pull
 ```
-
-> 现在还没有命令更新功能，敬请期待（在做了在做了.jpg）
