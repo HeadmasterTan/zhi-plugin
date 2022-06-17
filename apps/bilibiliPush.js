@@ -4,7 +4,7 @@ import { segment } from "oicq";
 import common from "../components/common.js";
 
 let nowDynamicPushList = new Map(); // 本次新增的需要推送的列表信息
-let lastDynamicPushList = new Map(); // 上一次新增的需要推送的列表信息，防止重复推送
+// let lastDynamicPushList = new Map(); // 上一次新增的需要推送的列表信息，防止重复推送 - 暂时用不上
 let PushBilibiliDynamic = {};
 
 // B站动态类型
@@ -25,7 +25,7 @@ const BiliApiRequestTimeInterval = 2000; // B站动态获取api间隔多久请�
 const DynamicPicCountLimit = 2; // 推送动态时，限制发送多少张图片
 const DynamicContentLenLimit = 50; // 推送动态时，限制字数是多少
 const DynamicContentLineLimit = 3; // 推送动态时，限制多少行文本
-const DynamicPushTimeInterval = 11 * 60 * 1000; // 允许推送多久以前的动态，本来间隔是10分钟，多加一分钟增加容错
+const DynamicPushTimeInterval = 10 * 60 * 1000 + 30 * 1000; // 允许推送多久以前的动态，本来间隔是10分钟，多加30秒增加容错，但是一定概率会发送两条
 
 // 初始化获取B站推送信息
 async function initBiliPushJson() {
@@ -40,6 +40,11 @@ initBiliPushJson();
 
 // 变更公告推送开启/关闭
 export async function changeBilibiliPush(e) {
+  if (e.isGroup && (!common.isGroupAdmin(e) && !e.isMaster)) {
+    e.reply("哒咩，只有管理员和master可以操作哦");
+    return true;
+  }
+
   // 推送对象记录
   let pushID = "";
   if (e.isGroup) {
@@ -85,6 +90,11 @@ export async function changeBilibiliPush(e) {
 
 // 新增/删除B站动态推送UID
 export async function updateBilibiliPush(e) {
+  if (e.isGroup && (!common.isGroupAdmin(e) && !e.isMaster)) {
+    e.reply("哒咩，只有管理员和master可以操作哦");
+    return true;
+  }
+
   // 推送对象记录
   let pushID = "";
   if (e.isGroup) {
@@ -103,7 +113,7 @@ export async function updateBilibiliPush(e) {
   }
 
   let msgList = e.msg.split("B站推送");
-  const addComms = ["添加", "新增", "增加"];
+  const addComms = ["订阅", "添加", "新增", "增加"];
   const delComms = ["删除", "移除", "去除"];
 
   let uid = msgList[1].trim();
@@ -214,10 +224,10 @@ export async function getBilibiliPushUserList(e) {
 
 // 推送定时任务
 export async function pushScheduleJob(e = {}) {
-  console.log("zhi-plugin =============================== B站动态定时推送");
+  Bot.logger.mark("zhi-plugin == B站动态定时推送");
 
   if (e.msg && !e.isMaster) {
-    e.reply("哒咩，你可不是老娘的骂死他");
+    e.reply("哒咩，你可不是老娘的master");
     return true;
   }
 
@@ -226,7 +236,6 @@ export async function pushScheduleJob(e = {}) {
     return true;
   }
 
-  lastDynamicPushList = nowDynamicPushList;
   nowDynamicPushList = new Map(); // 清空上次的推送列表
 
   let temp = PushBilibiliDynamic;
@@ -295,19 +304,7 @@ async function pushDynamic(pushInfo) {
       pushList.push(val);
     }
 
-    nowDynamicPushList.set(biliUID, pushList); // 记录本次满足时间要求的可推送动态列表，为空也存，下次再查就跳过
-
-    // 对比上一次推送，去除和上一次推送重复的动态内容
-    // let lastList = lastDynamicPushList.get(biliUID);
-    // if (lastList && lastList.length) {
-    //   lastList = lastList.map(item => item.id_str);
-    //   for (let i = 0; i < pushList.length; i++) {
-    //     if (lastList.indexOf(pushList[i].id_str) > -1) {
-    //       pushList.splice(i--, 1);
-    //     }
-    //   }
-    // }
-
+    nowDynamicPushList.set(biliUID, pushList); // 记录本次满足时间要求的可推送动态列表，为空也存，待会再查到就跳过
     if (pushList.length === 0) {
       // 没有可以推送的，记录完就跳过，下一个
       await common.sleep(BiliApiRequestTimeInterval);

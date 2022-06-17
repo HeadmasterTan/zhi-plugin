@@ -24,7 +24,7 @@ let rule = {
     describe: "开启或关闭B站推送，默认推送原神动态",
   },
   updateBilibiliPush: {
-    reg: "^#*(添加|增加|新增|删除|移除|去除)B站推送\\s*.*$",
+    reg: "^#*(订阅|添加|增加|新增|删除|移除|去除)B站推送\\s*.*$",
     priority: 5,
     describe: "添加或删除B站推送UID"
   },
@@ -38,11 +38,11 @@ let rule = {
     priority: 5,
     describe: "测试B站推送"
   },
-  // updateZhiPlugin: {
-  //   reg: "^#更新白纸插件$",
-  //   priority: 4999,
-  //   describe: "更新白纸插件",
-  // },
+  updateZhiPlugin: {
+    reg: "^#*更新白纸插件$",
+    priority: 5,
+    describe: "更新白纸插件",
+  },
   getRandomApply: {
     reg: "noCheck",
     priority: 5000,

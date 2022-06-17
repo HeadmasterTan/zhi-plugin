@@ -80,5 +80,16 @@ function getDayEnd() {
   return dayEnd - parseInt(now.getTime() / 1000);
 }
 
+/**
+ * 是不是狗管理或者狗群主
+ * @param {*} e oicq的消息对象
+ */
+function isGroupAdmin(e = {}) {
+  let isAdmin = e?.sender?.role === "admin";
+  let isOwner = e?.sender?.role === "owner";
 
-export default { relpyPrivate, sleep, getDayEnd };
+  return isAdmin || isOwner;
+}
+
+
+export default { relpyPrivate, sleep, getDayEnd, isGroupAdmin };

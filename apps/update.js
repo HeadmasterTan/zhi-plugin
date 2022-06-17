@@ -1,32 +1,29 @@
-import { createRequire } from "module";
-
-const require = createRequire(import.meta.url);
-const { exec } = require("child_process");
+import { exec } from "child_process";
 
 const _path = process.cwd();
 
 // 更新插件内容
-export async function updateZhiPlugin(e) {
+export async function updateZhiPlugin(e = {}) {
   if (!e.isMaster) {
-    e.reply("只有狗修金萨玛才能操作哦~");
+    e.reply("哒咩，你可不是老娘的master");
     return true;
   }
   
-  e.reply("开始尝试更新，请耐心等待~");
-  command = `git pull`;
+  let command = "git  pull";
+  e.reply("正在执行更新操作，请稍等");
+  
   exec(command, { cwd: `${_path}/plugins/zhi-plugin/` }, function (error, stdout, stderr) {
-    if (/Already up to date/.test(stdout)) {
-      e.reply("目前已经是最新了~");
+    if (/Already up[ -]to[ -]date/.test(stdout)) {
+      e.reply("目前已经是最新版哦~");
       return true;
     }
-
     if (error) {
-      e.reply("更新失败！请稍后重试。");
-    } else {
-      e.reply("更新成功~记得重启哦~");
+      e.reply(`更新失败了呜呜呜\nError code: ${error.code}\n等会再试试吧`);
+      // e.reply("更新失败！\nError code: " + error.code + "\n" + error.stack + "\n 请稍后重试。");
+      return true;
     }
-    return true;
+    e.reply("更新完成！请发送 #重启 或者手动重启吧~");
   });
 
-  return true; // 返回true 阻挡消息不再往下
+  return true;
 }
