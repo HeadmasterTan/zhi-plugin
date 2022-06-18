@@ -91,5 +91,17 @@ function isGroupAdmin(e = {}) {
   return isAdmin || isOwner;
 }
 
+/**
+ * 根据给到的数据，返回一个 1 - 60 的整数或者false
+ */
+function getRightTimeInterval(num) {
+  num = Number(num);
+  if (isNaN(num)) return false;
 
-export default { relpyPrivate, sleep, getDayEnd, isGroupAdmin };
+  if (num > 60) return 60;
+  if (num <= 0) return 1;
+
+  return num;
+}
+
+export default { relpyPrivate, sleep, getDayEnd, isGroupAdmin, getRightTimeInterval };

@@ -6,10 +6,13 @@ import {
   bilibiliPushPermission,
   updateBilibiliPush,
   getBilibiliPushUserList,
+  setBiliPushTimeInterval,
+  changeBiliPushTransmit,
   pushScheduleJob,
 } from "./apps/bilibiliPush.js";
 import { updateZhiPlugin } from "./apps/update.js";
 
+import fs from "fs";
 import schedule from "node-schedule";
 
 export {
@@ -24,6 +27,8 @@ export {
   bilibiliPushPermission,
   updateBilibiliPush,
   getBilibiliPushUserList,
+  setBiliPushTimeInterval,
+  changeBiliPushTransmit,
   pushScheduleJob,
   updateZhiPlugin,
 };
@@ -35,6 +40,18 @@ let rule = {
     priority: 5,
     describe: "开启或关闭B站推送，默认推送原神动态",
   },
+  updateBilibiliPush: {
+    reg: "^#*(订阅|添加|增加|新增|删除|移除|去除)B站推送\\s*.*$",
+    priority: 5,
+    describe: "添加或删除B站推送UID",
+  },
+  getBilibiliPushUserList: {
+    reg: "^#*B站推送(群)?列表$",
+    priority: 5,
+    describe: "返回当前聊天对象推送的B站用户列表",
+  },
+
+  /* 权限相关 Start */
   changeGroupBilibiliPush: {
     reg: "^#*(开启|关闭|允许|禁止)群B站推送\\s*.*$",
     priority: 5,
@@ -50,15 +67,17 @@ let rule = {
     priority: 5,
     describe: "不友好命令，慎用！可以在任意地方，给任意群聊开启/关闭狗管理使用B站推送功能的权限",
   },
-  updateBilibiliPush: {
-    reg: "^#*(订阅|添加|增加|新增|删除|移除|去除)B站推送\\s*.*$",
+  /* 权限相关 End */
+
+  setBiliPushTimeInterval: {
+    reg: "^#*B站推送时间\\s*\\d+$",
     priority: 5,
-    describe: "添加或删除B站推送UID",
+    describe: "设置B站推送的定时任务间隔时间",
   },
-  getBilibiliPushUserList: {
-    reg: "^#*B站推送(群)?列表$",
+  changeBiliPushTransmit: {
+    reg: "^#*(开启|关闭)B站转发推送$",
     priority: 5,
-    describe: "返回当前聊天对象推送的B站用户列表",
+    describe: "默认是不会推送类型为转发的B站动态的",
   },
   pushScheduleJob: {
     reg: "^#*测试B站推送$",
@@ -102,11 +121,33 @@ let rule = {
   },
 };
 
+// 获取配置，主要只是为了拿到定时任务的间隔推送时间
+let pushConfig = {};
+async function initPushConfig() {
+  if (fs.existsSync("./data/PushNews/BilibiliPushConfig.json")) {
+    pushConfig = JSON.parse(fs.readFileSync("./data/PushNews/BilibiliPushConfig.json", "utf8"));
+  }
+}
+initPushConfig();
+
 // 定时任务
 async function task() {
+  // Cron表达式，具体百度。每到[5,15,25,35,45,55]分钟执行一次，为什么这样设置？你管我╭(╯^╰)╮
+  let scheduleConfig = "0 5,15,25,35,45,55 * * * ?"; // 默认
+  let timeInter = Number(pushConfig.dynamicPushTimeInterval);
+  // 做好容错，防一手乱改配置文件
+  if (!isNaN(timeInter)) {
+    timeInter = Math.ceil(timeInter); // 确保一定是整数
+    if (timeInter <= 0) timeInter = 1; // 确保一定大于等于 1
+
+    scheduleConfig = `0 0/${timeInter} * * * ?`;
+    if (timeInter >= 60) {
+      scheduleConfig = `0 0 * * * ?`;
+    }
+  }
+
   // B站动态推送
-  // Cron表达式，具体百度。每到[5,15,25,35,45,55]分钟执行一次
-  schedule.scheduleJob("0 5,15,25,35,45,55 * * * ?", () => YunzaiApps["plugin_zhi-plugin"].pushScheduleJob());
+  schedule.scheduleJob(scheduleConfig, () => YunzaiApps["plugin_zhi-plugin"].pushScheduleJob());
 }
 
 task();

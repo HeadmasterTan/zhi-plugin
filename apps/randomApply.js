@@ -163,8 +163,6 @@ export async function addRandomApplyContext(e) {
     msgList.push(e.message);
   }
 
-  console.log('================= oicq e\n', e, '\n================= oicq e');
-
   textArr.set(context[e.user_id].text.trim(), msgList);
   e.reply([segment.at(e.user_id, name), "\n添加成功：", ...context[e.user_id].msg]);
   Bot.logger.mark(`[${e.sender.nickname}(${e.user_id})] 添加成功:${context[e.user_id].text}`);
@@ -211,15 +209,21 @@ export async function delRandomApply(e) {
     }
   }
 
-  let index = getIndex(msg);
-  // 指定序号删除
-  if (index > -1) {
-    msg = msg.split(" ");
-    msg.pop();
-    msg = msg.join(" ").trimEnd(); // 保不准这个表情中间真的有空格
+  let tempArr = textArr.get(msg);
+  let index = -1;
+
+  // 找不到表情，那试试看去掉序号有没有
+  if (!tempArr) {
+    index = getIndex(msg);
+    // 指定序号删除
+    if (index > -1) {
+      msg = msg.split(" ");
+      msg.pop();
+      msg = msg.join(" ").trimEnd(); // 保不准这个表情中间真的有空格
+    }
+    tempArr = textArr.get(msg);
   }
 
-  let tempArr = textArr.get(msg);
   if (tempArr) {
     if (index > -1) {
       if (index > tempArr.length) {
