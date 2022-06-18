@@ -12,6 +12,7 @@ let PushBilibiliDynamic = {}; // 推送对象列表
 // B站动态类型
 // const DynamicTypeList = {
 //   DYNAMIC_TYPE_AV: { name: "视频动态", type: "DYNAMIC_TYPE_AV" },
+//   DYNAMIC_TYPE_WORD: { name: "文字动态", type: "DYNAMIC_TYPE_WORD" },
 //   DYNAMIC_TYPE_DRAW: { name: "图文动态", type: "DYNAMIC_TYPE_DRAW" },
 //   DYNAMIC_TYPE_ARTICLE: { name: "专栏动态", type: "DYNAMIC_TYPE_ARTICLE" },
 //   DYNAMIC_TYPE_FORWARD: { name: "转发动态", type: "DYNAMIC_TYPE_FORWARD" },
@@ -486,7 +487,7 @@ export async function changeBiliPushTransmit(e) {
 
 // 推送定时任务
 export async function pushScheduleJob(e = {}) {
-  // if (e.msg) return true; // 注释这一行，master就可以手动发起推送了
+  if (e.msg) return false; // 注释这一行，master就可以手动发起推送了
   if (e.msg && !e.isMaster) {
     return false;
   }
@@ -643,6 +644,13 @@ function buildSendDynamic(biliUser, dynamic, info) {
       msg = [title, desc.title, segment.image(desc.cover), resetLinkUrl(desc.jump_url)];
 
       return msg;
+    case "DYNAMIC_TYPE_WORD":
+      desc = dynamic?.modules?.module_dynamic?.desc;
+      if (!desc) return;
+
+      msg = [title, `${dynamicContentLimit(desc.text)}\n`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+
+      return msg;
     case "DYNAMIC_TYPE_DRAW":
       desc = dynamic?.modules?.module_dynamic?.desc;
       pics = dynamic?.modules?.module_dynamic?.major?.draw?.items;
@@ -655,7 +663,7 @@ function buildSendDynamic(biliUser, dynamic, info) {
       });
 
       // 图文动态由内容（经过删减避免过长）、图片（最多4张）、链接组成
-      msg = [title, dynamicContentLimit(desc.text), ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+      msg = [title, `${dynamicContentLimit(desc.text)}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
 
       return msg;
     case "DYNAMIC_TYPE_ARTICLE":
