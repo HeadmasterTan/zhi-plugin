@@ -25,13 +25,14 @@ const BiliDynamicApiUrl = "https://api.bilibili.com/x/polymer/web-dynamic/v1/fee
 const BiliDrawDynamicLinkUrl = "https://m.bilibili.com/dynamic/"; // 图文动态链接地址
 
 const BotHaveARest = 1000; // 机器人每次发送间隔时间，腹泻式发送会不会不太妥？休息一下吧
-const BiliApiRequestTimeInterval = 2000; // B站动态获取api间隔多久请求一次，以防止被拉黑
+const BiliApiRequestTimeInterval = 2000; // B站动态获取api间隔多久请求一次，别太快防止被拉黑
 const DynamicPicCountLimit = 2; // 推送动态时，限制发送多少张图片
 const DynamicContentLenLimit = 50; // 推送动态时，限制字数是多少
 const DynamicContentLineLimit = 3; // 推送动态时，限制多少行文本
 
+let nowPushDate = Date.now(); // 设置当前推送的开始时间
 let pushTimeInterval = 10;
-let DynamicPushTimeInterval = 10 * 60 * 1000 + 30 * 1000; // 允许推送多久以前的动态，本来默认间隔是10分钟，多加30秒增加容错，但是一定概率会发送两条
+let DynamicPushTimeInterval = 10 * 60 * 1000; // 允许推送多久以前的动态，本来默认间隔是10分钟
 
 // 初始化获取B站推送信息
 async function initBiliPushJson() {
@@ -47,7 +48,7 @@ async function initBiliPushJson() {
     let timeInter = Number(BilibiliPushConfig.dynamicPushTimeInterval);
     if (!isNaN(timeInter)) {
       pushTimeInterval = common.getRightTimeInterval(timeInter);
-      DynamicPushTimeInterval = pushTimeInterval * 60 * 1000 + 10 * 1000; // 这10秒是容错
+      DynamicPushTimeInterval = pushTimeInterval * 60 * 1000;
     }
   } else {
     BilibiliPushConfig = {
@@ -499,12 +500,13 @@ export async function pushScheduleJob(e = {}) {
     return true;
   }
 
+  nowPushDate = Date.now();
   nowDynamicPushList = new Map(); // 清空上次的推送列表
 
   let temp = PushBilibiliDynamic;
   for (let user in temp) {
     temp[user].pushTarget = user; // 保存推送QQ对象
-    // 循环每个订阅了推送任务的QQ对象，allowPush可能不存在，只在严格不等于false的时候才禁止
+    // 循环每个订阅了推送任务的QQ对象
     if (isAllowSchedulePush(temp[user])) {
       await pushDynamic(temp[user]);
     }
@@ -566,8 +568,7 @@ async function pushDynamic(pushInfo) {
       continue;
     }
 
-    let nowDate = Date.now();
-    let pushList = []; // 满足时间要求的可推送动态列表
+    let pushList = new Set(); // 满足时间要求的可推送动态列表
 
     // 获取可以推送的动态列表
     for (let val of data) {
@@ -576,13 +577,14 @@ async function pushDynamic(pushInfo) {
 
       author.pub_ts = author.pub_ts * 1000;
       // 允许推送多早以前的动态，重要，超过了设定时间则不推
-      if (nowDate - author.pub_ts > DynamicPushTimeInterval) {
+      if (nowPushDate - author.pub_ts > DynamicPushTimeInterval) {
         continue;
       }
 
-      pushList.push(val);
+      pushList.add(val);
     }
 
+    pushList = [...pushList]; // 去重完成
     nowDynamicPushList.set(biliUID, pushList); // 记录本次满足时间要求的可推送动态列表，为空也存，待会再查到就跳过
     if (pushList.length === 0) {
       // 没有可以推送的，记录完就跳过，下一个
