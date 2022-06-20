@@ -32,7 +32,7 @@ const DynamicContentLineLimit = 3; // 推送动态时，限制多少行文本
 
 let nowPushDate = Date.now(); // 设置当前推送的开始时间
 let pushTimeInterval = 10;
-let DynamicPushTimeInterval = 10 * 60 * 1000; // 允许推送多久以前的动态，本来默认间隔是10分钟
+let DynamicPushTimeInterval = 10 * 60 * 1000 + 1000; // 允许推送多久以前的动态，本来默认间隔是10分钟，一秒是为了容错
 
 // 初始化获取B站推送信息
 async function initBiliPushJson() {
@@ -48,7 +48,7 @@ async function initBiliPushJson() {
     let timeInter = Number(BilibiliPushConfig.dynamicPushTimeInterval);
     if (!isNaN(timeInter)) {
       pushTimeInterval = common.getRightTimeInterval(timeInter);
-      DynamicPushTimeInterval = pushTimeInterval * 60 * 1000;
+      DynamicPushTimeInterval = pushTimeInterval * 60 * 1000 + 1000;
     }
   } else {
     BilibiliPushConfig = {
