@@ -4,7 +4,7 @@ import { segment } from "oicq";
 import common from "../components/common.js";
 
 let nowDynamicPushList = new Map(); // 本次新增的需要推送的列表信息
-// let lastDynamicPushList = new Map(); // 上一次新增的需要推送的列表信息，防止重复推送 - 暂时用不上
+let lastDynamicPushList = new Map(); // 上一次新增的需要推送的列表信息 -> 防止重复推送 —— 重要
 
 let BilibiliPushConfig = {}; // 推送配置
 let PushBilibiliDynamic = {}; // 推送对象列表
@@ -24,7 +24,7 @@ const BiliDynamicApiUrl = "https://api.bilibili.com/x/polymer/web-dynamic/v1/fee
 
 const BiliDrawDynamicLinkUrl = "https://m.bilibili.com/dynamic/"; // 图文动态链接地址
 
-const BotHaveARest = 1000; // 机器人每次发送间隔时间，腹泻式发送会不会不太妥？休息一下吧
+const BotHaveARest = 500; // 机器人每次发送间隔时间，腹泻式发送会不会不太妥？休息一下吧
 const BiliApiRequestTimeInterval = 2000; // B站动态获取api间隔多久请求一次，别太快防止被拉黑
 const DynamicPicCountLimit = 2; // 推送动态时，限制发送多少张图片
 const DynamicContentLenLimit = 50; // 推送动态时，限制字数是多少
@@ -32,7 +32,8 @@ const DynamicContentLineLimit = 3; // 推送动态时，限制多少行文本
 
 let nowPushDate = Date.now(); // 设置当前推送的开始时间
 let pushTimeInterval = 10;
-let DynamicPushTimeInterval = 10 * 60 * 1000 + 1000; // 允许推送多久以前的动态，本来默认间隔是10分钟，一秒是为了容错
+const FaultTolerant = 60 * 1000; // 容错时间，主要是怕漏推，容错有一分钟基本够用了
+let DynamicPushTimeInterval = 10 * 60 * 1000 + FaultTolerant; // 允许推送多久以前的动态，默认间隔是10分钟
 
 // 初始化获取B站推送信息
 async function initBiliPushJson() {
@@ -48,7 +49,7 @@ async function initBiliPushJson() {
     let timeInter = Number(BilibiliPushConfig.dynamicPushTimeInterval);
     if (!isNaN(timeInter)) {
       pushTimeInterval = common.getRightTimeInterval(timeInter);
-      DynamicPushTimeInterval = pushTimeInterval * 60 * 1000 + 1000;
+      DynamicPushTimeInterval = pushTimeInterval * 60 * 1000 + FaultTolerant;
     }
   } else {
     BilibiliPushConfig = {
@@ -287,8 +288,8 @@ export async function updateBilibiliPush(e) {
   }
 
   let msgList = e.msg.split("B站推送");
-  const addComms = ["订阅", "添加", "新增", "增加"];
-  const delComms = ["删除", "移除", "去除"];
+  const addComms = ["订阅", "添加", "新增", "增加", "#订阅", "#添加", "#新增", "#增加"];
+  const delComms = ["删除", "移除", "去除", "取消", "#删除", "#移除", "#去除", "#取消"];
 
   let uid = msgList[1].trim();
   let operComm = msgList[0];
@@ -501,6 +502,7 @@ export async function pushScheduleJob(e = {}) {
   }
 
   nowPushDate = Date.now();
+  lastDynamicPushList = nowDynamicPushList; // 记录上一次的推送列表
   nowDynamicPushList = new Map(); // 清空上次的推送列表
 
   let temp = PushBilibiliDynamic;
@@ -584,7 +586,7 @@ async function pushDynamic(pushInfo) {
       pushList.add(val);
     }
 
-    pushList = [...pushList]; // 去重完成
+    pushList = rmDuplicatePushList([...pushList], lastDynamicPushList.get(biliUID)); // 数据去重，以及确保不会重复推送
     nowDynamicPushList.set(biliUID, pushList); // 记录本次满足时间要求的可推送动态列表，为空也存，待会再查到就跳过
     if (pushList.length === 0) {
       // 没有可以推送的，记录完就跳过，下一个
@@ -598,6 +600,20 @@ async function pushDynamic(pushInfo) {
   }
 
   return true;
+}
+
+// 上一轮就推送过的动态，这一轮不推
+function rmDuplicatePushList(newList, oldList) {
+  if (!oldList || oldList.length === 0) return newList;
+  if (newList && newList.length === 0) return newList;
+
+  return newList.filter(item => {
+    for (let val of oldList) {
+      if (val.id_str === item.id_str) return false;
+    }
+
+    return true;
+  })
 }
 
 // 发送动态内容
@@ -642,6 +658,7 @@ function buildSendDynamic(biliUser, dynamic, info) {
       desc = dynamic?.modules?.module_dynamic?.major?.archive;
       if (!desc) return;
 
+      title = `B站【${biliUser.name}】视频动态推送：\n`;
       // 视频动态仅由标题、封面、链接组成
       msg = [title, desc.title, segment.image(desc.cover), resetLinkUrl(desc.jump_url)];
 
@@ -650,6 +667,7 @@ function buildSendDynamic(biliUser, dynamic, info) {
       desc = dynamic?.modules?.module_dynamic?.desc;
       if (!desc) return;
 
+      title = `B站【${biliUser.name}】动态推送：\n`;
       msg = [title, `${dynamicContentLimit(desc.text)}\n`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
 
       return msg;
@@ -664,6 +682,7 @@ function buildSendDynamic(biliUser, dynamic, info) {
         return segment.image(item.src);
       });
 
+      title = `B站【${biliUser.name}】图文动态推送：\n`;
       // 图文动态由内容（经过删减避免过长）、图片（最多4张）、链接组成
       msg = [title, `${dynamicContentLimit(desc.text)}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
 
@@ -679,6 +698,7 @@ function buildSendDynamic(biliUser, dynamic, info) {
         });
       }
 
+      title = `B站【${biliUser.name}】文章动态推送：\n`;
       // 专栏/文章动态由标题、图片、链接组成
       msg = [title, desc.title, ...pics, resetLinkUrl(desc.jump_url)];
 
@@ -699,7 +719,8 @@ function buildSendDynamic(biliUser, dynamic, info) {
         return false;
       }
 
-      msg = [title, "这是一条转发————\n", `${dynamicContentLimit(desc.text, 1, 15)}\n`, ...orig, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+      title = `B站【${biliUser.name}】转发动态推送：\n`;
+      msg = [title, `${dynamicContentLimit(desc.text, 1, 15)}\n---以下为转发内容---\n`, ...orig, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
 
       return msg;
     case "DYNAMIC_TYPE_LIVE_RCMD":
@@ -710,12 +731,13 @@ function buildSendDynamic(biliUser, dynamic, info) {
       desc = desc?.live_play_info;
       if (!desc) return;
 
+      title = `B站【${biliUser.name}】直播动态推送：\n`;
       // 直播动态由标题、封面、链接组成
-      msg = [title, `开播啦~要看吗要看吗\n${desc.title}`, segment.image(desc.cover), resetLinkUrl(desc.link)];
+      msg = [title, `${desc.title}\n`, segment.image(desc.cover), resetLinkUrl(desc.link)];
 
       return msg;
     default:
-      Bot.logger.mark(`未处理的B站推送：${dynamic.type}`);
+      Bot.logger.mark(`未处理的B站推送【${biliUser.name}】：${dynamic.type}`);
       return false;
   }
 }
