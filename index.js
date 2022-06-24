@@ -10,6 +10,7 @@ import {
   changeBiliPushTransmit,
   pushScheduleJob,
 } from "./apps/bilibiliPush.js";
+// import { test } from "./apps/genmaData.js"
 import { updateZhiPlugin } from "./apps/update.js";
 
 import fs from "fs";
@@ -31,6 +32,7 @@ export {
   changeBiliPushTransmit,
   pushScheduleJob,
   updateZhiPlugin,
+  // test,
 };
 
 let rule = {
@@ -121,6 +123,11 @@ let rule = {
   },
 
   // =================================================== 原魔数据，新坑，待填
+  // test: {
+  //   reg: "^原魔测试$",
+  //   priority: 5,
+  //   describe: "原魔测试"
+  // }
 };
 
 // 获取配置，主要只是为了拿到定时任务的间隔推送时间

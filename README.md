@@ -2,6 +2,19 @@
 
 [Zhi-Plugin](https://github.com/HeadmasterTan/zhi-plugin)是一个[Yunzai-Bot](https://github.com/Le-niao/Yunzai-Bot)的插件，详细功能见[功能说明](https://github.com/HeadmasterTan/zhi-plugin/blob/main/功能说明.md)
 
+## 依赖
+
+- [Yunzai-Bot](https://github.com/Le-niao/Yunzai-Bot)
+
+## 功能列表
+
+详细功能见[功能说明](https://github.com/HeadmasterTan/zhi-plugin/blob/main/功能说明.md)
+
+- 随机回复
+- B站动态推送
+- 插件更新
+- 原魔数据（开发中...）
+
 ## 安装与更新
 
 推荐使用git进行安装，以方便后续升级。在BOT根目录夹打开终端，运行如下命令进行安装。

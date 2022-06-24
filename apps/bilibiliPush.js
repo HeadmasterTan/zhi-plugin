@@ -19,20 +19,25 @@ let PushBilibiliDynamic = {}; // 推送对象列表
 //   DYNAMIC_TYPE_LIVE_RCMD: { name: "直播动态", type: "DYNAMIC_TYPE_LIVE_RCMD" },
 // };
 
-const BiliUserInfoApiUrl = "https://api.bilibili.com/x/space/acc/info";
 const BiliDynamicApiUrl = "https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space";
-
+const BiliUserInfoApiUrl = "https://api.bilibili.com/x/space/acc/info";
 const BiliDrawDynamicLinkUrl = "https://m.bilibili.com/dynamic/"; // 图文动态链接地址
 
 const BotHaveARest = 500; // 机器人每次发送间隔时间，腹泻式发送会不会不太妥？休息一下吧
 const BiliApiRequestTimeInterval = 2000; // B站动态获取api间隔多久请求一次，别太快防止被拉黑
+
 const DynamicPicCountLimit = 2; // 推送动态时，限制发送多少张图片
-const DynamicContentLenLimit = 50; // 推送动态时，限制字数是多少
-const DynamicContentLineLimit = 3; // 推送动态时，限制多少行文本
+const DynamicContentLenLimit = 50; // 推送文字和图文动态时，限制字数是多少
+const DynamicContentLineLimit = 3; // 推送文字和图文动态时，限制多少行文本
 
 let nowPushDate = Date.now(); // 设置当前推送的开始时间
 let pushTimeInterval = 10;
-const FaultTolerant = 60 * 1000; // 容错时间，主要是怕漏推，容错有一分钟基本够用了
+/**
+ * 漏推的可能性：
+ * 现在基本不存在因请求时间过长导致的漏推
+ * 但是没法防止因动态被夹（被官方扣下来了，但是发布时间pub_ts不变），然后放出来的时候真实时间和发布时间不一致的问题
+ */
+const FaultTolerant = 60 * 1000; // 容错时间（允许发布时间和真实时间的时间差），防漏推的，容错时间越长防漏推效果越好，但是对请求的负荷也会越高
 let DynamicPushTimeInterval = 10 * 60 * 1000 + FaultTolerant; // 允许推送多久以前的动态，默认间隔是10分钟
 
 // 初始化获取B站推送信息
@@ -683,7 +688,7 @@ function buildSendDynamic(biliUser, dynamic, info) {
       });
 
       title = `B站【${biliUser.name}】图文动态推送：\n`;
-      // 图文动态由内容（经过删减避免过长）、图片（最多4张）、链接组成
+      // 图文动态由内容（经过删减避免过长）、图片、链接组成
       msg = [title, `${dynamicContentLimit(desc.text)}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
 
       return msg;
