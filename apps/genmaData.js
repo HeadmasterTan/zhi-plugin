@@ -15,8 +15,10 @@ import superagent from "superagent";
 //   { cn: "岩", en: "geo" },
 // ];
 
+// 数据来源于内鬼网
 const GenmaUrl = "https://genshin.honeyhunterworld.com/db/enemy/?lang=CHS";
 const GenmaWebPrefixUrl = "https://genshin.honeyhunterworld.com";
+
 
 let GenmaList = []; // 原魔列表
 
@@ -127,46 +129,13 @@ function getDropListFromGenmaPage($) {
   return drops;
 }
 
+// 抗性数据对应关系
+const ShieldInfoMapping = ["hp", "atk", "def", "shield", "pyroShield", "dendroShield", "hydroShield", "electroShield", "anemoShield", "cyroShield", "geoShield"];
 // 提取原魔抗性等数据  <- 建立在原魔信息页面
 function getGenmaShieldInfoFromGenmaPage($, $statEle, info) {
   let shieldInfo = $statEle.eq(3).find("td");
-  // 这个真不知道该怎么处理，就用比较蠢的方法吧，大家都看得懂
   shieldInfo.each(function (idx) {
-    switch (idx) {
-      case 0:
-        info.hp = $(this).text();
-        break;
-      case 1:
-        info.atk = $(this).text();
-        break;
-      case 2:
-        info.def = $(this).text();
-        break;
-      case 3:
-        info.shield = $(this).text();
-        break;
-      case 4:
-        info.pyroShield = $(this).text();
-        break;
-      case 5:
-        info.dendroShield = $(this).text();
-        break;
-      case 6:
-        info.hydroShield = $(this).text();
-        break;
-      case 7:
-        info.electroShield = $(this).text();
-        break;
-      case 8:
-        info.anemoShield = $(this).text();
-        break;
-      case 9:
-        info.cyroShield = $(this).text();
-        break;
-      case 10:
-        info.geoShield = $(this).text();
-        break;
-    }
+    info[ShieldInfoMapping[idx]] = $(this).text();
   });
 }
 

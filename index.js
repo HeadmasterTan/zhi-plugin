@@ -7,6 +7,7 @@ import {
   updateBilibiliPush,
   getBilibiliPushUserList,
   setBiliPushTimeInterval,
+  setBiliPushFaultTime,
   changeBiliPushTransmit,
   pushScheduleJob,
 } from "./apps/bilibiliPush.js";
@@ -29,6 +30,7 @@ export {
   updateBilibiliPush,
   getBilibiliPushUserList,
   setBiliPushTimeInterval,
+  setBiliPushFaultTime,
   changeBiliPushTransmit,
   pushScheduleJob,
   updateZhiPlugin,
@@ -75,6 +77,11 @@ let rule = {
     reg: "^#*B站推送时间\\s*\\d+$",
     priority: 5,
     describe: "设置B站推送的定时任务间隔时间",
+  },
+  setBiliPushFaultTime: {
+    reg: "^#*B站推送容错时间\\s*\\d+$",
+    priority: 5,
+    describe: "设置B站推送的的容错时间，防止被叔叔夹了导致动态发布时间和实际不符而漏推",
   },
   changeBiliPushTransmit: {
     reg: "^#*(开启|关闭)B站转发推送$",

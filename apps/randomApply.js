@@ -8,6 +8,8 @@ if (!fs.existsSync(`${_path}/data/randomApply/`)) {
   fs.mkdirSync(`${_path}/data/randomApply/`);
 }
 
+// 其实就是对原本功能的重写，大部分代码都是一样的
+
 const JSON_PATH = `${_path}/data/randomApply/randomApply.json`;
 const BAKE_JSON_PATH = `${_path}/data/randomApply/randomApply_bake.json`;
 let context = {}; // 随机回复上下文
@@ -40,7 +42,6 @@ export async function getRandomApply(e) {
     text = text[Math.floor(Math.random() * text.length)]; // 随机回复其中的一条
 
     for (let val of text) {
-      // 避免风控。。
       if (val.type == "image") {
         let tmp = segment.image(val.url);
         tmp.asface = val.asface;

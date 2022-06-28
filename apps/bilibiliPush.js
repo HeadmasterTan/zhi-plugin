@@ -3,8 +3,9 @@ import fetch from "node-fetch";
 import { segment } from "oicq";
 import common from "../components/common.js";
 
+// let dynamicPushFailed = new Map(); // 推送失败列表 - 咕了，这个再做的话就没完了
+let dynamicPushHistory = []; // 历史推送，仅记录推送的消息ID，不记录本体对象，用来防止重复推送的
 let nowDynamicPushList = new Map(); // 本次新增的需要推送的列表信息
-let lastDynamicPushList = new Map(); // 上一次新增的需要推送的列表信息 -> 防止重复推送 —— 重要
 
 let BilibiliPushConfig = {}; // 推送配置
 let PushBilibiliDynamic = {}; // 推送对象列表
@@ -37,8 +38,8 @@ let pushTimeInterval = 10;
  * 现在基本不存在因请求时间过长导致的漏推
  * 但是没法防止因动态被夹（被官方扣下来了，但是发布时间pub_ts不变），然后放出来的时候真实时间和发布时间不一致的问题
  */
-const FaultTolerant = 60 * 1000; // 容错时间（允许发布时间和真实时间的时间差），防漏推的，容错时间越长防漏推效果越好，但是对请求的负荷也会越高
-let DynamicPushTimeInterval = 10 * 60 * 1000 + FaultTolerant; // 允许推送多久以前的动态，默认间隔是10分钟
+let faultTolerant = 60 * 1000; // 容错时间（允许发布时间和真实时间的时间差），防漏推的，容错时间越长防漏推效果越好，但是对请求的负荷也会越高
+let DynamicPushTimeInterval = pushTimeInterval * 60 * 1000 + faultTolerant; // 允许推送多久以前的动态，默认间隔是10分钟
 
 // 初始化获取B站推送信息
 async function initBiliPushJson() {
@@ -51,11 +52,19 @@ async function initBiliPushJson() {
   if (fs.existsSync("./data/PushNews/BilibiliPushConfig.json")) {
     BilibiliPushConfig = JSON.parse(fs.readFileSync("./data/PushNews/BilibiliPushConfig.json", "utf8"));
 
+    // 如果设置了容错时间
+    let faultTime = Number(BilibiliPushConfig.dynamicPushFaultTime);
+    if (!isNaN(faultTime)) {
+      faultTolerant = common.getRightTimeInterval(faultTime) * 60 * 1000;
+    }
+
+    // 如果设置了间隔时间
     let timeInter = Number(BilibiliPushConfig.dynamicPushTimeInterval);
     if (!isNaN(timeInter)) {
       pushTimeInterval = common.getRightTimeInterval(timeInter);
-      DynamicPushTimeInterval = pushTimeInterval * 60 * 1000 + FaultTolerant;
     }
+
+    DynamicPushTimeInterval = pushTimeInterval * 60 * 1000 + faultTolerant; // 允许推送多久以前的动态
   } else {
     BilibiliPushConfig = {
       allowPrivate: true,
@@ -397,7 +406,8 @@ export async function getBilibiliPushUserList(e) {
         PushBilibiliDynamic[groupID].pushTargetName = groupObj.group_name;
         let tmp = PushBilibiliDynamic[groupID];
         groupList.push(
-          `${groupObj.group_name}(${groupID})：${tmp.isNewsPush ? "已开启" : "已关闭"}，${tmp.adminPerm === false ? "无权限" : "有权限"}，${tmp.allowPush === false ? "禁止使用" : "允许使用"
+          `${groupObj.group_name}(${groupID})：${tmp.isNewsPush ? "已开启" : "已关闭"}，${tmp.adminPerm === false ? "无权限" : "有权限"}，${
+            tmp.allowPush === false ? "禁止使用" : "允许使用"
           }`
         );
       }
@@ -451,7 +461,28 @@ export async function setBiliPushTimeInterval(e) {
 
   BilibiliPushConfig.dynamicPushTimeInterval = time;
   await saveConfigJson();
-  e.reply("设置成功，重启后生效~\n请手动重启或者跟我说#重启");
+  e.reply(`设置间隔时间 ${time} 成功，重启后生效~\n请手动重启或者跟我说#重启`);
+
+  return true;
+}
+
+// 设置B站推送容错时间，对，就直接从上面搬下来了，为什么这么懒？就这么懒！
+export async function setBiliPushFaultTime(e) {
+  if (!e.isMaster) {
+    return false;
+  }
+
+  let time = e.msg.split("B站推送容错时间")[1].trim();
+  time = Number(time);
+
+  if (time <= 0 || time >= 60) {
+    e.reply("时间不能乱填哦\n时间单位：分钟，范围[1-60]\n示例：B站推送容错时间 10");
+    return true;
+  }
+
+  BilibiliPushConfig.dynamicPushFaultTime = time;
+  await saveConfigJson();
+  e.reply(`设置容错时间 ${time} 成功，重启后生效~\n请手动重启或者跟我说#重启`);
 
   return true;
 }
@@ -499,15 +530,34 @@ export async function pushScheduleJob(e = {}) {
     return false;
   }
 
-  Bot.logger.mark("zhi-plugin == B站动态定时推送");
-
-  // 没有开启B站推送
+  // 没有任何人正在开启B站推送
   if (Object.keys(PushBilibiliDynamic).length === 0) {
     return true;
   }
 
+  // 推送之前先初始化，拿到历史推送，但不能频繁去拿，为空的时候肯定要尝试去拿
+  if (dynamicPushHistory.length === 0) {
+    let temp = await redis.get("zhi:bilipush:history");
+    if (!temp) {
+      dynamicPushHistory = [];
+    } else {
+      dynamicPushHistory = JSON.parse(temp);
+    }
+  }
+
+  Bot.logger.mark("zhi-plugin == B站动态定时推送");
+
+  // 将上一次推送的动态全部合并到历史记录中
+  let hisArr = new Set(dynamicPushHistory);
+  for (let [userId, pushList] of nowDynamicPushList) {
+    for (let msg of pushList) {
+      hisArr.add(msg.id_str);
+    }
+  }
+  dynamicPushHistory = [...hisArr]; // 重新赋值，这个时候dynamicPushHistory就是完整的历史推送了。
+  await redis.set("zhi:bilipush:history", JSON.stringify(dynamicPushHistory), { EX: 60 * 60 }); // 仅存储一次，过期时间一小时，减小redis消耗
+
   nowPushDate = Date.now();
-  lastDynamicPushList = nowDynamicPushList; // 记录上一次的推送列表
   nowDynamicPushList = new Map(); // 清空上次的推送列表
 
   let temp = PushBilibiliDynamic;
@@ -591,7 +641,7 @@ async function pushDynamic(pushInfo) {
       pushList.add(val);
     }
 
-    pushList = rmDuplicatePushList([...pushList], lastDynamicPushList.get(biliUID)); // 数据去重，以及确保不会重复推送
+    pushList = rmDuplicatePushList([...pushList]); // 数据去重，确保不会重复推送
     nowDynamicPushList.set(biliUID, pushList); // 记录本次满足时间要求的可推送动态列表，为空也存，待会再查到就跳过
     if (pushList.length === 0) {
       // 没有可以推送的，记录完就跳过，下一个
@@ -607,18 +657,12 @@ async function pushDynamic(pushInfo) {
   return true;
 }
 
-// 上一轮就推送过的动态，这一轮不推
-function rmDuplicatePushList(newList, oldList) {
-  if (!oldList || oldList.length === 0) return newList;
+// 历史推送过的动态，这一轮不推
+function rmDuplicatePushList(newList) {
   if (newList && newList.length === 0) return newList;
-
-  return newList.filter(item => {
-    for (let val of oldList) {
-      if (val.id_str === item.id_str) return false;
-    }
-
-    return true;
-  })
+  return newList.filter((item) => {
+    return !dynamicPushHistory.includes(item.id_str);
+  });
 }
 
 // 发送动态内容
@@ -628,7 +672,8 @@ async function sendDynamic(info, biliUser, list) {
 
   for (let val of list) {
     let msg = buildSendDynamic(biliUser, val, info);
-    if (msg === "can't push transmit") { // 这不好在前边判断，只能放到这里了
+    if (msg === "can't push transmit") {
+      // 这不好在前边判断，只能放到这里了
       continue;
     }
     if (!msg) {
@@ -639,8 +684,9 @@ async function sendDynamic(info, biliUser, list) {
     if (info.isGroup) {
       Bot.pickGroup(pushID)
         .sendMsg(msg)
-        .catch((err) => {
-          Bot.logger.mark(err);
+        .catch((err) => { // 推送失败，可能仅仅是某个群推送失败
+          // dynamicPushFailed.set(pushID, val.id_str);
+          pushAgain(pushID, msg);
         });
     } else {
       common.relpyPrivate(pushID, msg);
@@ -648,6 +694,19 @@ async function sendDynamic(info, biliUser, list) {
 
     await common.sleep(BotHaveARest); // 休息一下，别一口气发一堆
   }
+
+  return true;
+}
+
+// 群推送失败了，再推一次，再失败就算球了
+async function pushAgain(groupId, msg) {
+  await common.sleep(BotHaveARest);
+
+  Bot.pickGroup(groupId)
+  .sendMsg(msg)
+  .catch((err) => {
+    Bot.logger.mark(`群[${groupId}]推送失败：${err}`);
+  });
 
   return true;
 }
@@ -717,7 +776,8 @@ function buildSendDynamic(biliUser, dynamic, info) {
       if (!dynamic.orig) return;
 
       let orig = buildSendDynamic(biliUser, dynamic.orig, info);
-      if (orig && orig.length) { // 掐头去尾
+      if (orig && orig.length) {
+        // 掐头去尾
         orig.shift();
         orig.pop();
       } else {
@@ -725,7 +785,12 @@ function buildSendDynamic(biliUser, dynamic, info) {
       }
 
       title = `B站【${biliUser.name}】转发动态推送：\n`;
-      msg = [title, `${dynamicContentLimit(desc.text, 1, 15)}\n---以下为转发内容---\n`, ...orig, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+      msg = [
+        title,
+        `${dynamicContentLimit(desc.text, 1, 15)}\n---以下为转发内容---\n`,
+        ...orig,
+        `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`,
+      ];
 
       return msg;
     case "DYNAMIC_TYPE_LIVE_RCMD":

@@ -2,6 +2,8 @@ import { exec } from "child_process";
 
 const _path = process.cwd();
 
+// 才！才不是直接扒了喵喵插件的代码呢！
+
 // 更新插件内容
 export async function updateZhiPlugin(e = {}) {
   if (!e.isMaster) {

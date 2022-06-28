@@ -8,7 +8,8 @@
 
 ## 功能列表
 
-详细功能见[功能说明](https://github.com/HeadmasterTan/zhi-plugin/blob/main/功能说明.md)
+功能详细说明见👉[功能说明](https://github.com/HeadmasterTan/zhi-plugin/blob/main/功能说明.md)
+你要想直接啃代码也行，注释我基本上都标清楚了，有问题的话可以尝试自己解决哦🧐
 
 - 随机回复
 - B站动态推送
@@ -23,7 +24,7 @@
 git clone https://github.com/HeadmasterTan/zhi-plugin.git ./plugins/zhi-plugin/
 ```
 
-如需更新，在BOT文件夹根目录打开终端，运行如下指令。或者给机器人发送`#更新白纸插件`（失败了就多试几次）
+如需更新，在BOT文件夹根目录打开终端，运行如下指令。或者给机器人发送`白纸更新`（失败了就多试几次吧，玩坏了就重新下载吧🤣）
 
 ```
 git -C ./plugins/zhi-plugin/ pull
