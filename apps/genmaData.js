@@ -1,8 +1,10 @@
 // npm i cheerio superagent -D
+// npm install download
 
 import fs from "fs";
 import cheerio from "cheerio";
 import superagent from "superagent";
+import common from "../components/common.js";
 
 // 怎么都是 o 结尾的？ mihoyo ？ 哦，懂了
 // const Translate = [
@@ -15,10 +17,17 @@ import superagent from "superagent";
 //   { cn: "岩", en: "geo" },
 // ];
 
-// 数据来源于内鬼网
-const GenmaUrl = "https://genshin.honeyhunterworld.com/db/enemy/?lang=CHS";
+/**
+ * 多语言
+ * CHS简中、CHT繁中、DE德语、EN英语、ES西班牙语、FR法语、ID印尼语、JA日语、KO韩语、PT葡萄牙语、RU俄语、TH泰语、VI越南语
+ */
+const i18nList = ["CHT", "DE", "EN", "ES", "FR", "ID", "JA", "KO", "PT", "RU", "TH", "VI"];
+// 内鬼网地址
+const GenmaUrl = "https://genshin.honeyhunterworld.com/db/enemy/?lang=";
 const GenmaWebPrefixUrl = "https://genshin.honeyhunterworld.com";
 
+// https://github.com/dvaJi/genshin-data
+const GithubGenshinDataUrl = "https://genshin-impact.fandom.com/wiki/";
 
 let GenmaList = []; // 原魔列表
 
@@ -31,6 +40,8 @@ if (!fs.existsSync(`${_path}/data/Genma/`)) {
 async function getGenmaList() {
   if (fs.existsSync(`${_path}/data/Genma/GenmaList.json`)) {
     GenmaList = JSON.parse(fs.readFileSync(`${_path}/data/Genma/GenmaList.json`, "utf8"));
+    initGenmaListFullImage();
+    i18nGenmaList();
   } else {
     initGenmaList();
   }
@@ -39,7 +50,59 @@ async function getGenmaList() {
 getGenmaList();
 
 export async function test() {
-  let genma = GenmaList[138];
+  for (let genma of GenmaList) {
+    superagent.get(genma.image, (err, res) => {
+      if (err) {
+        console.log("\n====================== face req err");
+        console.log(genma.name);
+        return true;
+      }
+  
+      let path = `${_path}/data/Genma/${genma.name}(${genma.id})`;
+      if (!fs.existsSync(path)) {
+        fs.mkdirSync(path);
+      }
+  
+      fs.writeFileSync(`${path}/face.png`, res.body, "binary", (err) => {
+        if (err) {
+          console.log("\n====================== face download err");
+          console.log(genma.name);
+        }
+      });
+    });
+    await common.sleep(1000);
+    if (genma.fullImage) {
+      superagent.get(genma.fullImage, (err, res) => {
+        if (err) {
+          console.log("\n====================== fullImage req err");
+          console.log(genma.name);
+          return true;
+        }
+    
+        let path = `${_path}/data/Genma/${genma.name}(${genma.id})`;
+        if (!fs.existsSync(path)) {
+          fs.mkdirSync(path);
+        }
+    
+        fs.writeFileSync(`${path}/fullImage.png`, res.body, "binary", (err) => {
+          if (err) {
+            console.log("\n====================== fullImage download err");
+            console.log(genma.name);
+          }
+        });
+      });
+    }
+    await common.sleep(2000);
+  }
+
+  console.log("\n================================");
+  console.log("原魔图片下载完成");
+  console.log("================================\n");
+}
+
+// 拉取单个原魔数据
+async function getSingleGenmaData(idx) {
+  let genma = GenmaList[idx];
 
   superagent.get(genma.url, (err, res) => {
     if (err) {
@@ -50,6 +113,7 @@ export async function test() {
     const $ = cheerio.load(res.text);
     let genmaData = {}; // 原魔数据对象
     genmaData.name = $(".custom_title").text();
+    genmaData.family = $('.item_main_table').eq(0).find('tr').eq(0).find('td').eq(2).text();
     genmaData.description = $('.item_main_table').eq(0).find('tr').eq(3).find('td').eq(1).html();
 
     // 提取原魔掉落物品
@@ -156,7 +220,9 @@ function getGenmaLevelInfoFromGenmaPage($, $levelListEle) {
 async function initGenmaList() {
   const IdReg = /m_\d*/g;
 
-  superagent.get(GenmaUrl, (err, res) => {
+  let url_chs = GenmaUrl + "CHS"; // 中文版
+
+  superagent.get(url_chs, (err, res) => {
     if (err) {
       Bot.logger.mark(err);
       return true;
@@ -181,7 +247,124 @@ async function initGenmaList() {
     });
 
     saveGenmaListJson();
+    console.log("开始拉取原魔数据多语言...");
+    i18nGenmaList();
   });
+}
+
+// 初始化原魔数据多语言
+async function i18nGenmaList() {
+  for (let val of i18nList) {
+    let url = GenmaUrl + val;
+
+    // 已经有了的语言就直接跳过吧
+    let isExist = false;
+    for (let key in GenmaList[0]) {
+      if (key.indexOf(val) > -1) {
+        isExist = true;
+        break;
+      }
+    }
+    if (isExist) {
+      continue;
+    }
+
+    superagent.get(url, (err, res) => {
+      if (err) {
+        Bot.logger.mark(err);
+        return true;
+      }
+  
+      const $ = cheerio.load(res.text);
+      let genmaEleList = $(".char_sea_cont.enemy_sea_cont");
+  
+      genmaEleList.each(function (idx) {
+        let nameEle = $(this).children().find("span.sea_charname");
+        GenmaList[idx][`name_${val}`] = nameEle.text();
+      });
+  
+      saveGenmaListJson();
+
+      if (val === "EN") {
+        console.log("开始拉取原魔全身照...");
+        initGenmaListFullImage();
+      }
+    });
+
+    await common.sleep(3000);
+  }
+
+  console.log("\n================================");
+  console.log("原魔数据多语言拉取完成");
+  console.log("================================\n");
+}
+
+// 原魔全身照
+async function initGenmaListFullImage() {
+  // 没有英文的话查不了GenshinData
+  if (!GenmaList[0].name_EN) return;
+
+  for (let genma of GenmaList) {
+    let name_EN = genma.name_EN.split(" ").join("_");
+    let url = GithubGenshinDataUrl + name_EN;
+
+    if (genma.fullImage) continue;
+
+    superagent.get(url, (err, res) => {
+      if (err) {
+        return true;
+      }
+  
+      const $ = cheerio.load(res.text);
+
+      let $fullImageList = $(".pi-image-thumbnail");
+      // 只有一张，那就是你了
+      if ($fullImageList.length === 1) {
+        genma.fullImage = $fullImageList.attr("src")?.split("?")[0];
+        return;
+      }
+
+      let validImages = [];
+      $fullImageList.each(function() {
+        let imgUrl = $(this).attr("src")?.split("?")[0];
+        // 不要头像
+        if (imgUrl && (imgUrl.indexOf("Icon") === -1)) {
+          validImages.push(imgUrl);
+        }
+      });
+
+      // 过滤完只剩一张，那就是你了
+      if (validImages.length === 1) {
+        genma.fullImage = validImages[0];
+        return;
+      }
+
+      let trueImg = "";
+      for (let img of validImages) {
+        if (img.indexOf(name_EN) > -1) {
+          trueImg = img;
+          break;
+        }
+      }
+
+      if (trueImg) {
+        genma.fullImage = trueImg;
+        return;
+      }
+      
+      if (validImages.length) {
+        genma.fullImage = validImages[validImages.length - 1];
+        return;
+      }
+    });
+
+    await common.sleep(5000);
+  }
+  
+  saveGenmaListJson();
+  console.log("\n================================");
+  console.log("原魔全身照拉取完成");
+  console.log("================================\n");
 }
 
 // 存储原魔列表
