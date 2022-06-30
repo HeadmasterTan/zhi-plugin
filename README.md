@@ -9,6 +9,7 @@
 ## 功能列表
 
 功能详细说明见👉[功能说明](https://github.com/HeadmasterTan/zhi-plugin/blob/main/功能说明.md)
+
 你要想直接啃代码也行，注释我基本上都标清楚了，有问题的话可以尝试自己解决哦🧐
 
 - 随机回复
