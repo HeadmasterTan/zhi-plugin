@@ -21,8 +21,12 @@
 
 推荐使用git进行安装，以方便后续升级。在BOT根目录夹打开终端，运行如下命令进行安装。
 
-```
+```base
 git clone https://github.com/HeadmasterTan/zhi-plugin.git ./plugins/zhi-plugin/
+
+# 如果上面那条安装不了或者失败的话就用下面这条吧(不是两条都执行、不是两条都执行、不是两条都执行)
+
+git clone https://gitee.com/headmastertan/zhi-plugin.git ./plugins/zhi-plugin/
 ```
 
 如需更新，在BOT文件夹根目录打开终端，运行如下指令。或者给机器人发送`白纸更新`（失败了就多试几次吧，玩坏了就重新下载吧🤣）
