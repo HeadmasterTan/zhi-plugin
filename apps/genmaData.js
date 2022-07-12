@@ -1,5 +1,4 @@
 // npm i cheerio superagent -D
-// npm install download
 
 import fs from "fs";
 import cheerio from "cheerio";
@@ -21,7 +20,20 @@ import common from "../components/common.js";
  * 多语言
  * CHS简中、CHT繁中、DE德语、EN英语、ES西班牙语、FR法语、ID印尼语、JA日语、KO韩语、PT葡萄牙语、RU俄语、TH泰语、VI越南语
  */
-const i18nList = ["CHT", "DE", "EN", "ES", "FR", "ID", "JA", "KO", "PT", "RU", "TH", "VI"];
+const i18nList = [
+  { CHT: "繁中" },
+  { DE: "德语" },
+  { EN: "英语" },
+  { ES: "西班牙语" },
+  { FR: "法语" },
+  { ID: "印尼语" },
+  { JA: "日语" },
+  { KO: "韩语" },
+  { PT: "葡萄牙语" },
+  { RU: "俄语" },
+  { TH: "泰语" },
+  { VI: "越南语" },
+];
 // 内鬼网地址
 const GenmaUrl = "https://genshin.honeyhunterworld.com/db/enemy/?lang=";
 const GenmaWebPrefixUrl = "https://genshin.honeyhunterworld.com";
@@ -57,12 +69,12 @@ export async function test() {
         console.log(genma.name);
         return true;
       }
-  
+
       let path = `${_path}/data/Genma/${genma.name}(${genma.id})`;
       if (!fs.existsSync(path)) {
         fs.mkdirSync(path);
       }
-  
+
       fs.writeFileSync(`${path}/face.png`, res.body, "binary", (err) => {
         if (err) {
           console.log("\n====================== face download err");
@@ -78,12 +90,12 @@ export async function test() {
           console.log(genma.name);
           return true;
         }
-    
+
         let path = `${_path}/data/Genma/${genma.name}(${genma.id})`;
         if (!fs.existsSync(path)) {
           fs.mkdirSync(path);
         }
-    
+
         fs.writeFileSync(`${path}/fullImage.png`, res.body, "binary", (err) => {
           if (err) {
             console.log("\n====================== fullImage download err");
@@ -113,8 +125,8 @@ async function getSingleGenmaData(idx) {
     const $ = cheerio.load(res.text);
     let genmaData = {}; // 原魔数据对象
     genmaData.name = $(".custom_title").text();
-    genmaData.family = $('.item_main_table').eq(0).find('tr').eq(0).find('td').eq(2).text();
-    genmaData.description = $('.item_main_table').eq(0).find('tr').eq(3).find('td').eq(1).html();
+    genmaData.family = $(".item_main_table").eq(0).find("tr").eq(0).find("td").eq(2).text();
+    genmaData.description = $(".item_main_table").eq(0).find("tr").eq(3).find("td").eq(1).html();
 
     // 提取原魔掉落物品
     genmaData.drops = getDropListFromGenmaPage($);
@@ -138,12 +150,12 @@ async function getSingleGenmaData(idx) {
       let $tagEle = $(this).find(".monster_stat_table");
       let tagSet = new Set();
       if ($tagEle.length) {
-        $tagEle.each(function() {
+        $tagEle.each(function () {
           let tag = $(this).find("tr").eq(1).find("td").text();
           tagSet.add(tag);
         });
       }
-      let tags = [...tagSet].join(',');
+      let tags = [...tagSet].join(",");
       info.tags = tags;
 
       // 提取等级数据
@@ -165,15 +177,15 @@ async function getSingleGenmaData(idx) {
 function getDropListFromGenmaPage($) {
   const dropsReg = /(i_\d*)|(a_\d*)/g;
   const dropsStarReg = /\dstar/g;
-  const dropInfoList = $('.asc_amount');
+  const dropInfoList = $(".asc_amount");
   let drops = []; // 掉落物品列表
 
-  dropInfoList.each(function() {
+  dropInfoList.each(function () {
     let $prev = $(this).prev();
     if ($prev.attr("class") != "itempic_cont lazy") return;
 
     let name = $(this).text().trim();
-    let star = '';
+    let star = "";
     let starMatch = $prev.attr("data-bg").match(dropsStarReg);
     if (starMatch && starMatch.length) {
       star = starMatch[0].substr(0, 1);
@@ -194,7 +206,19 @@ function getDropListFromGenmaPage($) {
 }
 
 // 抗性数据对应关系
-const ShieldInfoMapping = ["hp", "atk", "def", "shield", "pyroShield", "dendroShield", "hydroShield", "electroShield", "anemoShield", "cyroShield", "geoShield"];
+const ShieldInfoMapping = [
+  "hp",
+  "atk",
+  "def",
+  "shield",
+  "pyroShield",
+  "dendroShield",
+  "hydroShield",
+  "electroShield",
+  "anemoShield",
+  "cyroShield",
+  "geoShield",
+];
 // 提取原魔抗性等数据  <- 建立在原魔信息页面
 function getGenmaShieldInfoFromGenmaPage($, $statEle, info) {
   let shieldInfo = $statEle.eq(3).find("td");
@@ -206,11 +230,13 @@ function getGenmaShieldInfoFromGenmaPage($, $statEle, info) {
 // 提取原魔等级数据  <- 建立在原魔信息页面
 function getGenmaLevelInfoFromGenmaPage($, $levelListEle) {
   let levelInfo = []; // 连带着表头一起，提取全部的等级数据，这就相当于一个table啦
-  $levelListEle.each(function(idx) {
+  $levelListEle.each(function (idx) {
     levelInfo[idx] = [];
-    $(this).find("td").each(function() {
-      levelInfo[idx].push($(this).text());
-    })
+    $(this)
+      .find("td")
+      .each(function () {
+        levelInfo[idx].push($(this).text());
+      });
   });
 
   return levelInfo;
@@ -254,13 +280,13 @@ async function initGenmaList() {
 
 // 初始化原魔数据多语言
 async function i18nGenmaList() {
-  for (let val of i18nList) {
-    let url = GenmaUrl + val;
+  for (let lan of i18nList) {
+    let url = GenmaUrl + lan;
 
     // 已经有了的语言就直接跳过吧
     let isExist = false;
     for (let key in GenmaList[0]) {
-      if (key.indexOf(val) > -1) {
+      if (key.indexOf(lan) > -1) {
         isExist = true;
         break;
       }
@@ -274,18 +300,18 @@ async function i18nGenmaList() {
         Bot.logger.mark(err);
         return true;
       }
-  
+
       const $ = cheerio.load(res.text);
       let genmaEleList = $(".char_sea_cont.enemy_sea_cont");
-  
+
       genmaEleList.each(function (idx) {
         let nameEle = $(this).children().find("span.sea_charname");
-        GenmaList[idx][`name_${val}`] = nameEle.text();
+        GenmaList[idx][`name_${lan}`] = nameEle.text();
       });
-  
+
       saveGenmaListJson();
 
-      if (val === "EN") {
+      if (lan === "EN") {
         console.log("开始拉取原魔全身照...");
         initGenmaListFullImage();
       }
@@ -294,9 +320,7 @@ async function i18nGenmaList() {
     await common.sleep(3000);
   }
 
-  console.log("\n================================");
   console.log("原魔数据多语言拉取完成");
-  console.log("================================\n");
 }
 
 // 原魔全身照
@@ -314,7 +338,7 @@ async function initGenmaListFullImage() {
       if (err) {
         return true;
       }
-  
+
       const $ = cheerio.load(res.text);
 
       let $fullImageList = $(".pi-image-thumbnail");
@@ -325,10 +349,10 @@ async function initGenmaListFullImage() {
       }
 
       let validImages = [];
-      $fullImageList.each(function() {
+      $fullImageList.each(function () {
         let imgUrl = $(this).attr("src")?.split("?")[0];
         // 不要头像
-        if (imgUrl && (imgUrl.indexOf("Icon") === -1)) {
+        if (imgUrl && imgUrl.indexOf("Icon") === -1) {
           validImages.push(imgUrl);
         }
       });
@@ -351,7 +375,7 @@ async function initGenmaListFullImage() {
         genma.fullImage = trueImg;
         return;
       }
-      
+
       if (validImages.length) {
         genma.fullImage = validImages[validImages.length - 1];
         return;
@@ -360,11 +384,9 @@ async function initGenmaListFullImage() {
 
     await common.sleep(5000);
   }
-  
+
   saveGenmaListJson();
-  console.log("\n================================");
   console.log("原魔全身照拉取完成");
-  console.log("================================\n");
 }
 
 // 存储原魔列表

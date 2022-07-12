@@ -13,6 +13,7 @@ import {
 } from "./apps/bilibiliPush.js";
 // import { test } from "./apps/genmaData.js"
 import { updateZhiPlugin } from "./apps/update.js";
+import { help } from "./apps/help.js"
 
 import fs from "fs";
 import schedule from "node-schedule";
@@ -35,6 +36,7 @@ export {
   pushScheduleJob,
   updateZhiPlugin,
   // test,
+  help,
 };
 
 let rule = {
@@ -135,6 +137,13 @@ let rule = {
   //   priority: 5,
   //   describe: "原魔测试"
   // }
+
+  // =================================================== 帮助
+  help: {
+    reg: "^#*白纸帮助$",
+    priority: 5,
+    describe: "帮助文档，其实是图片"
+  }
 };
 
 // 获取配置，主要只是为了拿到定时任务的间隔推送时间

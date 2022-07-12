@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="stylesheet" type="text/css" href="{{_res_path}}/help/index.css" />
+  </head>
+  <body>
+    <div class="container" id="container">
+      <div class="info_box">
+        <div class="title"></div>
+      </div>
+
+      {{each helpGroup group}}
+      <div class="cont-box">
+        <div class="help-group">{{group.group}}</div>
+        <div class="help-table">
+          {{each group.list help idx}} {{if idx%3 == 0}}
+          <div class="tr">
+            {{/if}}
+            <div class="td">
+              <span class="help-icon" style="background: url({{_res_path}}/help/image/{{help.icon}}.png); background-size: 100% 100%;"></span>
+              <strong class="help-title">{{help.title}}</strong>
+              <span class="help-desc">{{help.desc}}</span>
+            </div>
+            {{if idx%3 ==2 || idx == group.list.length -1}}
+          </div>
+          {{/if}} {{/each}}
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </body>
+</html>
