@@ -3,7 +3,7 @@
     "group": "随机回复",
     "list": [
       {
-        "icon": "paimon",
+        "icon": "paimon-add-del",
         "title": "添加哈哈,删除哈哈",
         "desc": "可以不停地添加多个表情，删除是全部删除，记住哦"
       },

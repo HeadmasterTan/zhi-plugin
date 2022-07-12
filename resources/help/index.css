@@ -2,7 +2,8 @@ html * {
   box-sizing: border-box;
 }
 body {
-  transform: scale(1);
+  transform: scale(1.5);
+  transform-origin: 0 0;
   width: 830px;
   background-color: rgb(5, 18, 32);
   font-family: Number, "微软雅黑", sans-serif;
