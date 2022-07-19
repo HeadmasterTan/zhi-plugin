@@ -4,7 +4,8 @@
 
 ## 依赖
 
-- [Yunzai-Bot](https://github.com/Le-niao/Yunzai-Bot)
+- [Yunzai-Bot](https://github.com/Le-niao/Yunzai-Bot/tree/master)
+  - 不是3.0版本，不是3.0版本，不是3.0版本
 
 ## 功能列表
 
@@ -21,6 +22,9 @@
 ## 安装与更新
 
 推荐使用git进行安装，以方便后续升级。在BOT根目录夹打开终端，运行如下命令进行安装。
+
+> 注：如果运行发现报错了，请检查一下当前Yunzai是否3.0版本（main分支），目前插件暂不支持Yunzai3.0版本
+> 如果确实需要使用，请把Yunzai分支切换到master分支，具体操作：在Yunzai根目录执行`git checkout master`
 
 ```base
 git clone https://github.com/HeadmasterTan/zhi-plugin.git ./plugins/zhi-plugin/
