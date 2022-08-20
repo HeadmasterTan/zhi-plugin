@@ -106,13 +106,13 @@ let rule = {
   // =================================================== 随机回复
   getRandomApply: {
     reg: "(.*)",
-    priority: 5000,
+    priority: 50000,
     describe: "回复添加的随机回复",
   },
   // 覆盖默认的添加表情行为
   randomApply: {
     reg: "^#添加(.*)",
-    priority: 5001,
+    priority: 500,
     describe: "【添加哈哈】添加内容",
   },
   // revertRandomApply: {
@@ -122,12 +122,12 @@ let rule = {
   // },
   addRandomApplyContext: {
     reg: "(.*)",
-    priority: 5002,
+    priority: 50000,
     describe: "添加随机回复上下文",
   },
   delRandomApply: {
     reg: "^#删除(.*)$",
-    priority: 5003,
+    priority: 500,
     describe: "【删除哈哈】删除添加的内容",
   },
 

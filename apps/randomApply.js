@@ -1,7 +1,7 @@
 import { segment } from "oicq";
 import fs from "fs";
 import lodash from "lodash";
-import { botConfig } from "../components/common.js";
+import { isV3, botConfig } from "../components/common.js";
 
 const _path = process.cwd();
 
@@ -63,7 +63,17 @@ export async function getRandomApply(e) {
 
 // 添加随机回复
 export async function randomApply(e) {
-  if (!e.message || !e.message.includes("#")) {
+  if (!e.message) {
+    return false;
+  }
+
+  let text = '';
+  if (isV3) {
+    text = e.message[0]?.text;
+  } else {
+    text = e.message?.text;
+  }
+  if (text && text[0] != "#") {
     return false;
   }
 
@@ -185,6 +195,16 @@ export async function addRandomApplyContext(e) {
 
 // 删除表情
 export async function delRandomApply(e) {
+  let text = '';
+  if (isV3) {
+    text = e.message[0]?.text;
+  } else {
+    text = e.message?.text;
+  }
+  if (text && text[0] != "#") {
+    return false;
+  }
+
   var re = new RegExp("{at:" + botConfig.account.qq + "}", "g");
 
   let msg = e
