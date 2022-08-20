@@ -24,7 +24,7 @@
       },
       {
         "icon": "role",
-        "title": "添加/删除B站推送 XX",
+        "title": "订阅/取消B站推送 XX",
         "desc": "订阅或取消订阅，XX为B站用户的UID"
       },
       {

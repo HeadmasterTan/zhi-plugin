@@ -2,6 +2,7 @@ import fs from "fs";
 import fetch from "node-fetch";
 import { segment } from "oicq";
 import common from "../components/common.js";
+import { botConfig } from "../components/common.js"
 
 // let dynamicPushFailed = new Map(); // 推送失败列表 - 咕了，这个再做的话就没完了
 let dynamicPushHistory = []; // 历史推送，仅记录推送的消息ID，不记录本体对象，用来防止重复推送的
@@ -529,7 +530,7 @@ export async function pushScheduleJob(e = {}) {
   if (e.msg && !e.isMaster) {
     return false;
   }
-
+  
   // 没有任何人正在开启B站推送
   if (Object.keys(PushBilibiliDynamic).length === 0) {
     return true;
@@ -572,7 +573,7 @@ export async function pushScheduleJob(e = {}) {
 
 // 定时任务是否给这个QQ对象推送B站动态
 function isAllowSchedulePush(user) {
-  if (BotConfig.masterQQ.includes(Number(user.pushTarget))) return true; // 主人的命令就是一切！
+  if (botConfig.masterQQ.includes(Number(user.pushTarget))) return true; // 主人的命令就是一切！
 
   if (!user.isNewsPush) return false; // 不推那当然。。不推咯
   if (user.allowPush === false) return false; // 信息里边禁止使用推送功能了，那直接禁止

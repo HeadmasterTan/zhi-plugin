@@ -1,5 +1,6 @@
 import fs from "fs";
 import { segment } from "oicq";
+import { isV3 } from "../components/common.js";
 
 // 我又双叒叕抄了喵喵的代码咩哈哈哈，嗯？我又不盈利，没什么可耻的哼！
 
@@ -36,9 +37,9 @@ const renderFunc = async function (path, params, cfg) {
     ...params,
   });
 
+  let ret = true;
   if (base64) {
-    return await e.reply(segment.image(`base64://${base64}`));
+    ret = isV3 ? await e.reply(base64) : await e.reply(segment.image(`base64://${base64}`));
   }
-
-  return true;
+  return cfg.retMsgId ? ret : true;
 };

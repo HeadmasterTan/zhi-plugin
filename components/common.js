@@ -1,4 +1,27 @@
 
+import fs from 'fs'
+
+const _path = process.cwd();
+
+let packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+const yunzaiVersion = packageJson.version
+export const isV3 = yunzaiVersion[0] === '3'
+
+let config;
+if (isV3) {
+  const YAML = await import('yaml');
+
+  let configUrl = `${_path}/config/config`
+  let qq = YAML.parse(fs.readFileSync(`${configUrl}/qq.yaml`, 'utf8'));
+  let other = YAML.parse(fs.readFileSync(`${configUrl}//other.yaml`, 'utf8'));
+  let group = YAML.parse(fs.readFileSync(`${configUrl}//group.yaml`, 'utf8'));
+
+  config = { qq, other, group, masterQQ: other.masterQQ, account: qq };
+} else {
+  config = BotConfig;
+}
+
+export const botConfig = config;
 
 /**
  * 发送私聊消息，非好友以临时聊天发送
@@ -15,7 +38,7 @@ async function relpyPrivate(user_id, msg ,isStranger = false) {
     Bot.pickUser(user_id).sendMsg(msg).catch((err) => {
       Bot.logger.mark(err);
     });
-    redis.incr(`Yunzai:sendMsgNum:${BotConfig.account.qq}`);
+    redis.incr(`Yunzai:sendMsgNum:${botConfig.account.qq}`);
     return;
   }
   else {

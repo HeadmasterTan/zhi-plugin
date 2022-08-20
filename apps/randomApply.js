@@ -1,6 +1,7 @@
 import { segment } from "oicq";
 import fs from "fs";
 import lodash from "lodash";
+import { botConfig } from "../components/common.js";
 
 const _path = process.cwd();
 
@@ -34,7 +35,7 @@ export async function getRandomApply(e) {
 
   // 提取关键词
   let key = e.toString().replace(/#|＃/g, "");
-  key = key.replace(`{at:${BotConfig.account.qq}}`, "").trim();
+  key = key.replace(`{at:${botConfig.account.qq}}`, "").trim();
 
   let text = textArr.get(key); // 获取关键词对应的回复列表
   if (textArr && text) {
@@ -62,7 +63,7 @@ export async function getRandomApply(e) {
 
 // 添加随机回复
 export async function randomApply(e) {
-  if (!e.message) {
+  if (!e.message || !e.message.includes("#")) {
     return false;
   }
 
@@ -77,7 +78,7 @@ export async function randomApply(e) {
       head = val;
     } else {
       if (val.type == "at") {
-        if (val.qq == BotConfig.account.qq) {
+        if (val.qq == (botConfig.account.qq)) {
           continue;
         }
         delete val.text;
@@ -110,7 +111,7 @@ export async function randomApply(e) {
     return true;
   }
 
-  var re = new RegExp("{at:" + BotConfig.account.qq + "}", "g");
+  var re = new RegExp("{at:" + botConfig.account.qq + "}", "g");
 
   // 上下文添加
   context[e.user_id] = {
@@ -145,7 +146,7 @@ export async function addRandomApplyContext(e) {
   // 添加消息处理
   for (let i in e.message) {
     if (e.message[i].type == "at") {
-      if (e.message[i].qq == BotConfig.account.qq) {
+      if (e.message[i].qq == (botConfig.account.qq)) {
         e.reply([segment.at(e.user_id, name), " 不要@我啦，再给你一次机会哦"]);
         return true;
       }
@@ -184,7 +185,7 @@ export async function addRandomApplyContext(e) {
 
 // 删除表情
 export async function delRandomApply(e) {
-  var re = new RegExp("{at:" + BotConfig.account.qq + "}", "g");
+  var re = new RegExp("{at:" + botConfig.account.qq + "}", "g");
 
   let msg = e
     .toString()
@@ -196,14 +197,15 @@ export async function delRandomApply(e) {
     return false;
   }
 
-  if (e.groupConfig.imgAddLimit == 2) {
+  let limit = e?.groupConfig?.imgAddLimit || botConfig.group.imgAddLimit;
+  if (limit == 2) {
     if (!e.isMaster) {
       e.reply(`只有主人才能删除`);
       return true;
     }
   }
 
-  if (e.groupConfig.imgAddLimit == 1 && !e.isMaster) {
+  if (limit == 1 && !e.isMaster) {
     if (e.isGroup && !e.member.is_admin) {
       e.reply(`只有管理员才能删除`);
       return true;
