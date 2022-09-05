@@ -4,6 +4,12 @@ import { segment } from "oicq";
 import common from "../components/common.js";
 import { botConfig } from "../components/common.js"
 
+const _path = process.cwd();
+
+if (!fs.existsSync(`${_path}/data/PushNews/`)) {
+  fs.mkdirSync(`${_path}/data/PushNews/`);
+}
+
 // let dynamicPushFailed = new Map(); // 推送失败列表 - 咕了，这个再做的话就没完了
 let dynamicPushHistory = []; // 历史推送，仅记录推送的消息ID，不记录本体对象，用来防止重复推送的
 let nowDynamicPushList = new Map(); // 本次新增的需要推送的列表信息
@@ -44,14 +50,14 @@ let DynamicPushTimeInterval = pushTimeInterval * 60 * 1000 + faultTolerant; // �
 
 // 初始化获取B站推送信息
 async function initBiliPushJson() {
-  if (fs.existsSync("./data/PushNews/PushBilibiliDynamic.json")) {
-    PushBilibiliDynamic = JSON.parse(fs.readFileSync("./data/PushNews/PushBilibiliDynamic.json", "utf8"));
+  if (fs.existsSync(_path + "/data/PushNews/PushBilibiliDynamic.json")) {
+    PushBilibiliDynamic = JSON.parse(fs.readFileSync(_path + "/data/PushNews/PushBilibiliDynamic.json", "utf8"));
   } else {
     savePushJson();
   }
 
-  if (fs.existsSync("./data/PushNews/BilibiliPushConfig.json")) {
-    BilibiliPushConfig = JSON.parse(fs.readFileSync("./data/PushNews/BilibiliPushConfig.json", "utf8"));
+  if (fs.existsSync(_path + "/data/PushNews/BilibiliPushConfig.json")) {
+    BilibiliPushConfig = JSON.parse(fs.readFileSync(_path + "/data/PushNews/BilibiliPushConfig.json", "utf8"));
 
     // 如果设置了容错时间
     let faultTime = Number(BilibiliPushConfig.dynamicPushFaultTime);
@@ -881,12 +887,12 @@ function isAllowPushFunc(e) {
 
 // 存储B站推送信息
 async function savePushJson() {
-  let path = "./data/PushNews/PushBilibiliDynamic.json";
+  let path = _path + "/data/PushNews/PushBilibiliDynamic.json";
   fs.writeFileSync(path, JSON.stringify(PushBilibiliDynamic, "", "\t"));
 }
 
 // 存储B站推送配置信息
 async function saveConfigJson() {
-  let path = "./data/PushNews/BilibiliPushConfig.json";
+  let path = _path + "/data/PushNews/BilibiliPushConfig.json";
   fs.writeFileSync(path, JSON.stringify(BilibiliPushConfig, "", "\t"));
 }
