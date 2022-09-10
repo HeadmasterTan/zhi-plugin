@@ -21,7 +21,7 @@ export class baizhi extends plugin {
   }
 
   async dispatch (e) {
-    let msg = e.original_msg || ''
+    let msg = e.original_msg || 'not original_msg'
     if (!msg) {
       return false
     }
