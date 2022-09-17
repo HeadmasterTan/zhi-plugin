@@ -360,8 +360,21 @@ export async function updateBilibiliPush(e) {
       return true;
     }
 
-    let url = `${BiliUserInfoApiUrl}?mid=${uid}&jsonp=jsonp`;
-    const response = await fetch(url, { method: "get" });
+    // B站用户信息接口增加了一道浏览器验证，随便填个浏览器信息好了
+    const headers = {
+      'sec-ch-ua': '"Google Chrome";v="105", "Not)A;Brand";v="8", "Chromium";v="105"',
+      'sec-ch-ua-mobile': '?0',
+      'sec-ch-ua-platform': '"Windows"',
+      'sec-fetch-dest': 'document',
+      'sec-fetch-mode': 'navigate',
+      'sec-fetch-site': 'none',
+      'sec-fetch-user': '?1',
+      'upgrade-insecure-requests': 1,
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36'
+    }
+
+    let url = `${BiliUserInfoApiUrl}?mid=${uid}&token=&platform=web&jsonp=jsonp`;
+    const response = await fetch(url, { headers, method: "get" });
 
     if (!response.ok) {
       e.reply("哦噢，出了点问题，可能是本大爷网络不好也可能是B站出了问题呢，等会再试试吧~");
