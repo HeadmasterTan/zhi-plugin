@@ -106,7 +106,7 @@ let rule = {
   // =================================================== 随机回复
   getRandomApply: {
     reg: "(.*)",
-    priority: 502,
+    priority: 50000,
     describe: "回复添加的随机回复",
   },
   // 覆盖默认的添加表情行为
@@ -122,7 +122,7 @@ let rule = {
   // },
   addRandomApplyContext: {
     reg: "(.*)",
-    priority: 501,
+    priority: 50000,
     describe: "添加随机回复上下文",
   },
   delRandomApply: {
