@@ -1,20 +1,19 @@
-
-import fs from 'fs'
+import fs from "fs";
 
 const _path = process.cwd();
 
-let packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'))
-const yunzaiVersion = packageJson.version
-export const isV3 = yunzaiVersion[0] === '3'
+let packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+const yunzaiVersion = packageJson.version;
+export const isV3 = yunzaiVersion[0] === "3";
 
 let config;
 if (isV3) {
-  const YAML = await import('yaml');
+  const YAML = await import("yaml");
 
-  let configUrl = `${_path}/config/config`
-  let qq = YAML.parse(fs.readFileSync(`${configUrl}/qq.yaml`, 'utf8'));
-  let other = YAML.parse(fs.readFileSync(`${configUrl}//other.yaml`, 'utf8'));
-  let group = YAML.parse(fs.readFileSync(`${configUrl}//group.yaml`, 'utf8'));
+  let configUrl = `${_path}/config/config`;
+  let qq = YAML.parse(fs.readFileSync(`${configUrl}/qq.yaml`, "utf8"));
+  let other = YAML.parse(fs.readFileSync(`${configUrl}//other.yaml`, "utf8"));
+  let group = YAML.parse(fs.readFileSync(`${configUrl}//group.yaml`, "utf8"));
 
   config = { qq, other, group, masterQQ: other.masterQQ, account: qq };
 } else {
@@ -29,21 +28,22 @@ export const botConfig = config;
  * @param msg 消息
  * @param isStranger 是否给陌生人发消息,默认false
  */
-async function relpyPrivate(user_id, msg ,isStranger = false) {
+async function relpyPrivate(user_id, msg, isStranger = false) {
   user_id = parseInt(user_id);
 
   let friend = Bot.fl.get(user_id);
   if (friend) {
     Bot.logger.mark(`发送好友消息[${friend.nickname}](${user_id})`);
-    Bot.pickUser(user_id).sendMsg(msg).catch((err) => {
-      Bot.logger.mark(err);
-    });
+    Bot.pickUser(user_id)
+      .sendMsg(msg)
+      .catch((err) => {
+        Bot.logger.mark(err);
+      });
     redis.incr(`Yunzai:sendMsgNum:${botConfig.account.qq}`);
     return;
-  }
-  else {
+  } else {
     //是否给陌生人发消息
-    if(!isStranger){
+    if (!isStranger) {
       return;
     }
     let key = `Yunzai:group_id:${user_id}`;
@@ -51,8 +51,10 @@ async function relpyPrivate(user_id, msg ,isStranger = false) {
 
     if (!group_id) {
       for (let group of Bot.gl) {
-        group[0] = parseInt(group[0])
-        let MemberInfo = await Bot.getGroupMemberInfo(group[0], user_id).catch((err)=>{});
+        group[0] = parseInt(group[0]);
+        let MemberInfo = await Bot.getGroupMemberInfo(group[0], user_id).catch(
+          (err) => {}
+        );
         if (MemberInfo) {
           group_id = group[0];
           redis.set(key, group_id.toString(), { EX: 1209600 });
@@ -60,16 +62,17 @@ async function relpyPrivate(user_id, msg ,isStranger = false) {
         }
       }
     } else {
-      group_id = parseInt(group_id)
+      group_id = parseInt(group_id);
     }
 
     if (group_id) {
-
       Bot.logger.mark(`发送临时消息[${group_id}]（${user_id}）`);
 
-      let res = await Bot.pickMember(group_id, user_id).sendMsg(msg).catch((err) => {
-        Bot.logger.mark(err);
-      });
+      let res = await Bot.pickMember(group_id, user_id)
+        .sendMsg(msg)
+        .catch((err) => {
+          Bot.logger.mark(err);
+        });
 
       if (res) {
         redis.expire(key, 86400 * 15);
@@ -82,7 +85,38 @@ async function relpyPrivate(user_id, msg ,isStranger = false) {
       Bot.logger.mark(`发送临时消息失败：[${user_id}]`);
     }
   }
+}
 
+/**
+ * 消息合并工具函数
+ * @param {Array} messages 需要合并的消息列表，必填
+ * @param {Boolean} isGroup 是否发送到群，必填，false时为发送到个人
+ * @param {String} title 标题
+ */
+async function replyMake(messages, isGroup, title) {
+  let nickname = Bot.nickname;
+
+  // 组装消息
+  let msgList = [];
+  messages.forEach((msg) => {
+    msgList.push({
+      message: msg, // 合并消息中的每一个单项消息
+      nickname: nickname, // 机器人名字
+      user_id: Bot.uin, // 机器人的QQ号
+    });
+  });
+
+  let forwardMsg = await Bot.makeForwardMsg(msgList, !isGroup);
+
+  if (title) {
+    // 处理合并消息在点开前看到的描述
+    forwardMsg.data = forwardMsg.data
+      .replace(/\n/g, "")
+      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, "___")
+      .replace(/___+/, `<title color="#777777" size="26">${title}</title>`);
+  }
+
+  return forwardMsg;
 }
 
 /**
@@ -98,7 +132,15 @@ function sleep(ms) {
  */
 function getDayEnd() {
   let now = new Date();
-  let dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), "23", "59", "59").getTime() / 1000;
+  let dayEnd =
+    new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      "23",
+      "59",
+      "59"
+    ).getTime() / 1000;
 
   return dayEnd - parseInt(now.getTime() / 1000);
 }
@@ -127,4 +169,11 @@ function getRightTimeInterval(num) {
   return num;
 }
 
-export default { relpyPrivate, sleep, getDayEnd, isGroupAdmin, getRightTimeInterval };
+export default {
+  relpyPrivate,
+  replyMake,
+  sleep,
+  getDayEnd,
+  isGroupAdmin,
+  getRightTimeInterval,
+};

@@ -9,6 +9,7 @@ import {
   setBiliPushTimeInterval,
   setBiliPushFaultTime,
   changeBiliPushTransmit,
+  setBiliPushSendType,
   pushScheduleJob,
 } from "./bilibiliPush.js";
 // import { test } from "./genmaData.js"
@@ -33,6 +34,7 @@ export {
   setBiliPushTimeInterval,
   setBiliPushFaultTime,
   changeBiliPushTransmit,
+  setBiliPushSendType,
   pushScheduleJob,
   updateZhiPlugin,
   // test,
@@ -81,14 +83,19 @@ let rule = {
     describe: "设置B站推送的定时任务间隔时间",
   },
   setBiliPushFaultTime: {
-    reg: "^#*B站推送容错时间\\s*\\d+$",
+    reg: "^#*B站推送过期时间\\s*\\d+$",
     priority: 5,
-    describe: "设置B站推送的的容错时间，防止被叔叔夹了导致动态发布时间和实际不符而漏推",
+    describe: "设置B站推送的的过期时间，防止被叔叔夹了导致动态发布时间和实际不符而漏推",
   },
   changeBiliPushTransmit: {
     reg: "^#*(开启|关闭)B站转发推送$",
     priority: 5,
     describe: "默认是不会推送类型为转发的B站动态的",
+  },
+  setBiliPushSendType: {
+    reg: "^#*设置(全局)?B站推送(默认|合并|图片)$",
+    priority: 5,
+    describe: "设置B站推送发送类型为：默认（文字+图片+链接）、合并（合并消息转发）、图片（就是图片）",
   },
   pushScheduleJob: {
     reg: "^#*测试B站推送$",
