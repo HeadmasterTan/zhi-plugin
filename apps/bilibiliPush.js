@@ -30,6 +30,22 @@ const BiliDynamicApiUrl = "https://api.bilibili.com/x/polymer/web-dynamic/v1/fee
 // const BiliUserInfoApiUrl = "https://api.bilibili.com/x/space/acc/info"; // 用户信息接口加了Cookie校验，废弃了
 const BiliDrawDynamicLinkUrl = "https://m.bilibili.com/dynamic/"; // 图文动态链接地址
 
+const BiliReqHeaders = {
+  'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  'accept-encoding': 'gzip, deflate, br',
+  'accept-language': 'zh-CN,zh;q=0.9',
+  'cache-control': 'max-age=0',
+  'sec-ch-ua': '"Microsoft Edge";v="113", "Chromium";v="113", "Not-A.Brand";v="24"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': "Windows",
+  'sec-fetch-dest': 'document',
+  'sec-fetch-mode': 'navigate',
+  'sec-fetch-site': 'none',
+  'sec-fetch-user': '?1',
+  'upgrade-insecure-requests': '1',
+  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.50',
+}
+
 const BotHaveARest = 500; // 机器人每次发送间隔时间，腹泻式发送会不会不太妥？休息一下吧
 const BiliApiRequestTimeInterval = 2000; // B站动态获取api间隔多久请求一次，别太快防止被拉黑
 
@@ -361,7 +377,7 @@ export async function updateBilibiliPush(e) {
 
     // let url = `${BiliUserInfoApiUrl}?mid=${uid}&token=&platform=web&jsonp=jsonp`; // 用户信息接口废弃了
     let url = `${BiliDynamicApiUrl}?host_mid=${uid}`;
-    const response = await fetch(url, { method: "get" });
+    const response = await fetch(url, { method: "get", headers: BiliReqHeaders });
 
     if (!response.ok) {
       e.reply("哦噢，出了点问题，可能是本大爷网络不好也可能是B站出了问题呢，等会再试试吧~");
@@ -666,7 +682,7 @@ async function pushDynamic(pushInfo) {
     }
 
     let url = `${BiliDynamicApiUrl}?host_mid=${biliUID}`;
-    const response = await fetch(url, { method: "get" });
+    const response = await fetch(url, { method: "get", headers: BiliReqHeaders });
 
     if (!response.ok) {
       // 请求失败，不记录，跳过，下一个
