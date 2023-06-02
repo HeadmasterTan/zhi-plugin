@@ -31,6 +31,7 @@ const BiliDynamicApiUrl = "https://api.bilibili.com/x/polymer/web-dynamic/v1/fee
 const BiliDrawDynamicLinkUrl = "https://m.bilibili.com/dynamic/"; // 图文动态链接地址
 
 const BiliReqHeaders = {
+  'cookie': 'buvid3=39F176E2-F26B-B44F-D799-00E96DBC76C135058infoc; b_nut=1685714035; b_lsid=DD9E610C2_1887C62E35C; _uuid=85F3F279-EF8B-A17E-55BA-25CB1F53736B35554infoc; buvid_fp=883044596d94501e8c58bde015cc747d; buvid4=B2BAA4E9-6CFF-2441-B117-C4187B44DB5C36267-023060221-PFJkqvvsrkqub01LLGiv7Q%3D%3D',
   'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
   'accept-encoding': 'gzip, deflate, br',
   'accept-language': 'zh-CN,zh;q=0.9',
