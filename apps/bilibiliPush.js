@@ -3,6 +3,7 @@ import fetch from "node-fetch";
 import { segment } from "oicq";
 import common from "../components/common.js";
 import { botConfig } from "../components/common.js"
+import { getBLsid, getUuid } from "../resources/biliPush/ckMaker.js"
 
 const _path = process.cwd();
 
@@ -30,8 +31,12 @@ const BiliDynamicApiUrl = "https://api.bilibili.com/x/polymer/web-dynamic/v1/fee
 // const BiliUserInfoApiUrl = "https://api.bilibili.com/x/space/acc/info"; // 用户信息接口加了Cookie校验，废弃了
 const BiliDrawDynamicLinkUrl = "https://m.bilibili.com/dynamic/"; // 图文动态链接地址
 
+// B站推送需要用到的CK
+// const CK_LIST = ['buvid3', 'b_nut', 'b_lsid', '_uuid', 'buvid_fp', 'buvid4']
+// document.cookie.split(';').filter(a => { var b = ['buvid3', 'b_nut', 'b_lsid', '_uuid', 'buvid_fp', 'buvid4']; for (let i = 0; i < b.length; i++) if (a.includes(b[i])) return true; return false; }).join(';');
+
 const BiliReqHeaders = {
-  'cookie': 'buvid3=39F176E2-F26B-B44F-D799-00E96DBC76C135058infoc; b_nut=1685714035; b_lsid=DD9E610C2_1887C62E35C; _uuid=85F3F279-EF8B-A17E-55BA-25CB1F53736B35554infoc; buvid_fp=883044596d94501e8c58bde015cc747d; buvid4=B2BAA4E9-6CFF-2441-B117-C4187B44DB5C36267-023060221-PFJkqvvsrkqub01LLGiv7Q%3D%3D',
+  'cookie': '',
   'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
   'accept-encoding': 'gzip, deflate, br',
   'accept-language': 'zh-CN,zh;q=0.9',
@@ -59,6 +64,37 @@ let pushTimeInterval = 10; // 推送间隔时间，单位：分钟
 
 // 延长过期时间的定义
 let DynamicPushTimeInterval = 60 * 60 * 1000; // 过期时间，单位：小时，默认一小时，范围[1,24]
+
+// 每次启动自动获取新的cookie ================================= 不大顶用，先留个档
+async function getBiliCookie() {
+  // 获取 B3 ck
+  let url = "https://space.bilibili.com/401742377";
+  let response = await fetch(url, { method: "get", headers: BiliReqHeaders });
+  if (!response.ok) {
+    return true;
+  }
+  let cookies = response?.headers?.raw()?.['set-cookie'] ?? [];
+  cookies = cookies.map(item => {
+    return item.split(';')[0]
+  })
+  BiliReqHeaders.cookie = cookies.join('; ')
+  
+  // 获取 B4 ck
+  url = "https://api.bilibili.com/x/frontend/finger/spi";
+  response = await fetch(url, { method: "get", headers: BiliReqHeaders });
+
+  if (!response.ok) {
+    return true;
+  }
+
+  const res = await response.json();
+  const b4ck = res?.data?.b_4 ?? '';
+  cookies.push(`buvid4=${b4ck}`)
+  
+  // 获取 b_lsid 和  _uuid
+  cookies.push(getBLsid(), getUuid());
+  BiliReqHeaders.cookie = cookies.join('; ')
+}
 
 // 初始化获取B站推送信息
 async function initBiliPushJson() {
@@ -378,6 +414,7 @@ export async function updateBilibiliPush(e) {
 
     // let url = `${BiliUserInfoApiUrl}?mid=${uid}&token=&platform=web&jsonp=jsonp`; // 用户信息接口废弃了
     let url = `${BiliDynamicApiUrl}?host_mid=${uid}`;
+    BiliReqHeaders.cookie = `DedeUserID=${uid}`
     const response = await fetch(url, { method: "get", headers: BiliReqHeaders });
 
     if (!response.ok) {
@@ -386,6 +423,11 @@ export async function updateBilibiliPush(e) {
     }
 
     const res = await response.json();
+
+    // if (res.code == '-352') {
+    //   e.reply("B站ck过期了。。。你可以执行命令\n#B站推送ck [你的ck]\n来替换过期的ck");
+    //   return true;
+    // }
 
     if (res.code != 0) {
       e.reply("老实说，介UID是不是你自己瞎填的？");
@@ -474,6 +516,14 @@ export async function getBilibiliPushUserList(e) {
   let status = push.isNewsPush ? "开启" : "关闭";
 
   e.reply(`当前B站推送是【${status}】状态哦\n推送的B站用户有：\n${info}`);
+
+  return true;
+}
+
+export async function setBiliPushCookie(e) {
+  if (!e.isMaster) {
+    return false;
+  }
 
   return true;
 }
@@ -683,6 +733,7 @@ async function pushDynamic(pushInfo) {
     }
 
     let url = `${BiliDynamicApiUrl}?host_mid=${biliUID}`;
+    BiliReqHeaders.cookie = `DedeUserID=${biliUID}`
     const response = await fetch(url, { method: "get", headers: BiliReqHeaders });
 
     if (!response.ok) {

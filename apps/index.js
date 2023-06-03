@@ -6,6 +6,7 @@ import {
   bilibiliPushPermission,
   updateBilibiliPush,
   getBilibiliPushUserList,
+  setBiliPushCookie,
   setBiliPushTimeInterval,
   setBiliPushFaultTime,
   changeBiliPushTransmit,
@@ -31,6 +32,7 @@ export {
   bilibiliPushPermission,
   updateBilibiliPush,
   getBilibiliPushUserList,
+  setBiliPushCookie,
   setBiliPushTimeInterval,
   setBiliPushFaultTime,
   changeBiliPushTransmit,
@@ -77,6 +79,11 @@ let rule = {
   },
   /* 权限相关 End */
 
+  setBiliPushCookie: {
+    reg: "^#*B站推送ck\\s*.+$",
+    priority: 5,
+    describe: "设置B站推送ck，当推送失败或提示ck过期时，可尝试将自己的ck替换原ck"
+  },
   setBiliPushTimeInterval: {
     reg: "^#*B站推送时间\\s*\\d+$",
     priority: 5,
